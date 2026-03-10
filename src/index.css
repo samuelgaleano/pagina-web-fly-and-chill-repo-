@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-brand-black: #050505;
+  --color-brand-primary: #76bbca;
+  --color-brand-secondary: #d97f6b;
+  --color-brand-amber: #d97f6b;
+  --color-brand-gold: #76bbca;
+  --color-brand-green: #76bbca;
+  --color-brand-dark: #0f171a;
+  --color-brand-gray: #1e292e;
+}
+
+body {
+  @apply bg-brand-black text-white font-sans antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-heading;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-brand-black;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-brand-gray rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-brand-amber;
+}
