@@ -39,82 +39,73 @@ export function Navbar() {
       </div>
 
       <header
-        className={`sticky top-0 z-40 w-full transition-all duration-300 ${
+        className={`sticky top-0 z-40 w-full transition-all duration-500 ${
           isScrolled 
-            ? "bg-brand-black/95 backdrop-blur-md border-b border-brand-gold/20 shadow-lg shadow-brand-amber/5" 
+            ? "bg-brand-black/95 backdrop-blur-xl border-b border-white/5 shadow-2xl" 
             : "bg-brand-black border-b border-transparent"
         }`}
       >
-        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+        <div className="container mx-auto px-4 h-24 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <img 
-              src="/logo.png" 
-              alt="Fly and Chill Logo" 
-              className="h-12 w-auto object-contain transition-transform group-hover:scale-105"
-              onError={(e) => {
-                // Fallback to text if image is not found
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-            <div className="hidden flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-brand-dark flex items-center justify-center border border-brand-gold/30 group-hover:border-brand-amber transition-colors">
-                <span className="text-brand-gold font-heading font-black text-xl italic">F&C</span>
+          <Link to="/" className="flex items-center gap-4 group">
+            <div className="relative">
+              <img 
+                src="/logo.png" 
+                alt="Fly and Chill Logo" 
+                className="h-14 w-auto object-contain transition-transform group-hover:scale-110 duration-500"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="hidden w-14 h-14 rounded-none bg-brand-primary flex items-center justify-center group-hover:bg-brand-secondary transition-colors duration-500">
+                <span className="text-brand-black font-heading font-black text-2xl italic">F&C</span>
               </div>
-              <span className="font-heading font-black text-2xl tracking-tighter text-white group-hover:text-brand-gold transition-colors">
-                FLY AND CHILL
-              </span>
             </div>
+            <span className="font-heading font-black text-3xl tracking-tighter text-white group-hover:text-brand-primary transition-colors duration-500 hidden lg:block">
+              FLY AND CHILL
+            </span>
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
+          {/* Desktop Nav - Bold & Spaced */}
+          <nav className="hidden md:flex items-center gap-12">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
-                className={`font-heading font-bold uppercase tracking-wider text-sm transition-colors hover:text-brand-gold ${
-                  location.pathname === link.path ? "text-brand-amber" : "text-gray-300"
+                className={`font-heading font-black uppercase tracking-[0.2em] text-xs transition-all hover:text-brand-primary relative group ${
+                  location.pathname === link.path ? "text-brand-primary" : "text-white"
                 }`}
               >
                 {link.name}
+                <span className={`absolute -bottom-2 left-0 w-0 h-0.5 bg-brand-primary transition-all duration-300 group-hover:w-full ${location.pathname === link.path ? "w-full" : ""}`} />
               </Link>
             ))}
           </nav>
 
-          {/* Icons */}
-          <div className="flex items-center gap-4">
-            <button className="text-gray-300 hover:text-brand-gold transition-colors hidden sm:block">
-              <Search className="w-5 h-5" />
+          {/* Icons - Clean & Minimal */}
+          <div className="flex items-center gap-8">
+            <button className="text-white hover:text-brand-primary transition-colors hidden sm:block">
+              <Search className="w-6 h-6" />
             </button>
-            <Link to="/cart" className="relative text-gray-300 hover:text-brand-gold transition-colors">
-              <ShoppingCart className="w-5 h-5" />
+            <Link to="/cart" className="relative text-white hover:text-brand-primary transition-colors">
+              <ShoppingCart className="w-6 h-6" />
               {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-brand-amber text-brand-black text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-3 -right-3 bg-brand-primary text-brand-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-brand-black">
                   {totalItems}
                 </span>
               )}
             </Link>
-            <button className="text-gray-300 hover:text-brand-gold transition-colors hidden sm:block">
-              <User className="w-5 h-5" />
+            <button className="text-white hover:text-brand-primary transition-colors hidden sm:block">
+              <User className="w-6 h-6" />
             </button>
-            <a 
-              href="https://wa.me/1234567890?text=Hola,%20quiero%20hacer%20un%20pedido%20rápido" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-brand-primary hover:text-brand-secondary transition-colors hidden sm:block"
-              title="Chat with us for quick purchases"
-            >
-              <MessageCircle className="w-5 h-5" />
-            </a>
 
             {/* Mobile Menu Toggle */}
             <button 
-              className="md:hidden text-gray-300 hover:text-brand-gold"
+              className="md:hidden text-white hover:text-brand-primary transition-colors"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
             </button>
           </div>
         </div>

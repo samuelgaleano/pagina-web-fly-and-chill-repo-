@@ -10,189 +10,135 @@ export function Shop() {
   const { addToCart } = useCart();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedFlavor, setSelectedFlavor] = useState("All");
 
   const categories = ["All", ...Array.from(new Set(products.map(p => p.category)))];
-  const flavors = ["All", ...Array.from(new Set(products.map(p => p.flavor)))];
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           p.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
-    const matchesFlavor = selectedFlavor === "All" || p.flavor === selectedFlavor;
-    return matchesSearch && matchesCategory && matchesFlavor;
+    return matchesSearch && matchesCategory;
   });
 
   return (
-    <div className="bg-brand-black min-h-screen pt-24 pb-16">
+    <div className="bg-white min-h-screen pt-32 pb-24 text-brand-black">
       <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-brand-gold/10 pb-8">
-          <div className="mb-6 md:mb-0">
-            <h1 className="text-4xl md:text-5xl font-heading font-black text-white uppercase tracking-tighter mb-2">
-              Catálogo
+        {/* Header - Bold & Minimal */}
+        <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+          <div className="max-w-xl">
+            <h1 className="text-7xl md:text-8xl font-heading font-black uppercase tracking-tighter leading-[0.85] mb-6">
+              NUESTRA <br /> <span className="text-brand-primary">TIENDA</span>
             </h1>
-            <p className="text-brand-gold font-sans">Destilados premium de alta pureza.</p>
+            <p className="text-xl text-gray-500 font-sans">
+              Explora nuestra selección premium de destilados y accesorios diseñados para elevar tu estilo de vida.
+            </p>
           </div>
           
-          {/* Search */}
-          <div className="relative w-full md:w-72">
+          {/* Search - Clean & Modern */}
+          <div className="relative w-full md:w-96">
             <input
               type="text"
-              placeholder="Buscar productos..."
+              placeholder="BUSCAR PRODUCTOS..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-brand-dark border border-brand-gold/20 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-brand-amber transition-colors"
+              className="w-full bg-gray-100 border-none rounded-none pl-12 pr-6 py-5 text-sm font-black uppercase tracking-widest text-brand-black focus:ring-2 focus:ring-brand-primary transition-all"
             />
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar Filters */}
-          <aside className="w-full lg:w-64 shrink-0 space-y-8">
-            <div>
-              <h3 className="font-heading font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Filter className="w-4 h-4 text-brand-amber" /> Categorías
-              </h3>
-              <ul className="space-y-2">
-                {categories.map(cat => (
-                  <li key={cat}>
-                    <button
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`text-sm font-sans transition-colors ${
-                        selectedCategory === cat 
-                          ? "text-brand-amber font-bold" 
-                          : "text-gray-400 hover:text-white"
-                      }`}
-                    >
-                      {cat === "All" ? "Todos los productos" : cat}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+        {/* Categories Bar - Minimalist */}
+        <div className="flex flex-wrap gap-4 mb-16 border-b border-gray-100 pb-8">
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-8 py-3 text-xs font-black uppercase tracking-[0.2em] transition-all ${
+                selectedCategory === cat 
+                  ? "bg-brand-black text-white" 
+                  : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-brand-black"
+              }`}
+            >
+              {cat === "All" ? "TODOS" : cat}
+            </button>
+          ))}
+        </div>
 
-            <div>
-              <h3 className="font-heading font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Filter className="w-4 h-4 text-brand-amber" /> Sabores
-              </h3>
-              <ul className="space-y-2">
-                {flavors.map(flavor => (
-                  <li key={flavor}>
-                    <button
-                      onClick={() => setSelectedFlavor(flavor)}
-                      className={`text-sm font-sans transition-colors ${
-                        selectedFlavor === flavor 
-                          ? "text-brand-amber font-bold" 
-                          : "text-gray-400 hover:text-white"
-                      }`}
-                    >
-                      {flavor === "All" ? "Todos los sabores" : flavor}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+        {/* Product Grid - Clean High Impact */}
+        <div className="flex-1">
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-32 bg-gray-50">
+              <p className="text-gray-400 font-black uppercase tracking-widest mb-8">No se encontraron productos.</p>
+              <Button 
+                className="bg-brand-black text-white rounded-none px-10 py-6 font-black uppercase tracking-widest"
+                onClick={() => {
+                  setSearchTerm("");
+                  setSelectedCategory("All");
+                }}
+              >
+                LIMPIAR FILTROS
+              </Button>
             </div>
-          </aside>
-
-          {/* Product Grid */}
-          <div className="flex-1">
-            {filteredProducts.length === 0 ? (
-              <div className="text-center py-20 bg-brand-dark rounded-xl border border-brand-gold/10">
-                <p className="text-gray-400 font-sans mb-4">No se encontraron productos con esos filtros.</p>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setSearchTerm("");
-                    setSelectedCategory("All");
-                    setSelectedFlavor("All");
-                  }}
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
+              {filteredProducts.map((product) => (
+                <motion.div 
+                  key={product.id}
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="group cursor-pointer"
                 >
-                  Limpiar Filtros
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => (
-                  <motion.div 
-                    key={product.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-brand-dark border border-brand-gold/10 rounded-xl overflow-hidden group flex flex-col"
-                  >
-                    <Link to={`/shop/${product.id}`} className="relative aspect-square overflow-hidden bg-black block">
-                      <img 
-                        src={product.image} 
-                        alt={product.name} 
-                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute top-3 left-3 flex flex-col gap-2">
-                        <span className="bg-brand-black/80 backdrop-blur-sm text-brand-gold text-xs font-bold px-2 py-1 rounded border border-brand-gold/20 w-fit">
-                          {product.cbdContent} CBD
+                  <Link to={`/shop/${product.id}`} className="block relative aspect-[4/5] overflow-hidden bg-gray-100 mb-6">
+                    <img 
+                      src={product.image} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute top-4 left-4 flex flex-col gap-2">
+                      <span className="bg-brand-black text-white text-[10px] font-black px-3 py-1 uppercase tracking-widest">
+                        {product.cbdContent} CBD
+                      </span>
+                      {product.stock <= 10 && product.stock > 0 && (
+                        <span className="bg-brand-secondary text-white text-[10px] font-black px-3 py-1 uppercase tracking-widest">
+                          POCO STOCK
                         </span>
-                        {product.stock <= 10 && product.stock > 0 && (
-                          <span className="bg-brand-amber/90 backdrop-blur-sm text-brand-black text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider w-fit">
-                            Poco Stock
-                          </span>
-                        )}
-                        {product.stock === 0 && (
-                          <span className="bg-gray-800/90 backdrop-blur-sm text-gray-300 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider w-fit border border-gray-600">
-                            Agotado
-                          </span>
-                        )}
-                      </div>
-                      
-                      {/* Quick View Overlay */}
-                      <div className="absolute inset-0 bg-brand-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                        <Button 
-                          variant="amber" 
-                          size="icon" 
-                          className="rounded-full"
-                          disabled={product.stock === 0}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            addToCart(product);
-                          }}
-                        >
-                          <ShoppingCart className="w-5 h-5" />
-                        </Button>
-                        <Button variant="outline" size="icon" className="rounded-full bg-brand-black/50">
-                          <Eye className="w-5 h-5" />
-                        </Button>
-                      </div>
-                    </Link>
-                    <div className="p-5 flex flex-col flex-1">
-                      <div className="text-xs text-brand-amber mb-1 font-bold uppercase tracking-wider">{product.category}</div>
-                      <Link to={`/shop/${product.id}`}>
-                        <h3 className="text-lg font-heading font-bold text-white mb-2 line-clamp-1 group-hover:text-brand-gold transition-colors">
-                          {product.name}
-                        </h3>
-                      </Link>
-                      <p className="text-sm text-gray-400 mb-4 line-clamp-2 font-sans flex-1">
-                        {product.description}
-                      </p>
-                      <div className="flex items-center justify-between mt-auto">
-                        <span className="text-xl font-bold text-white">${product.price.toFixed(2)}</span>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          disabled={product.stock === 0}
-                          onClick={() => addToCart(product)}
-                        >
-                          {product.stock === 0 ? "Agotado" : "Añadir"}
-                        </Button>
-                      </div>
+                      )}
+                      {product.stock === 0 && (
+                        <span className="bg-gray-400 text-white text-[10px] font-black px-3 py-1 uppercase tracking-widest">
+                          AGOTADO
+                        </span>
+                      )}
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
+                    
+                    {/* Quick Add Button */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                      <Button 
+                        className="w-full bg-brand-black text-white hover:bg-brand-primary rounded-none font-black uppercase tracking-widest py-4"
+                        disabled={product.stock === 0}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          addToCart(product);
+                        }}
+                      >
+                        {product.stock === 0 ? "AGOTADO" : "Añadir +"}
+                      </Button>
+                    </div>
+                  </Link>
+                  <div className="space-y-2">
+                    <div className="text-[10px] font-black text-brand-primary uppercase tracking-[0.2em]">{product.category}</div>
+                    <Link to={`/shop/${product.id}`}>
+                      <h3 className="text-2xl font-heading font-black uppercase tracking-tight group-hover:text-brand-primary transition-colors">
+                        {product.name}
+                      </h3>
+                    </Link>
+                    <div className="text-xl font-sans font-bold text-gray-400">${product.price.toFixed(2)}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

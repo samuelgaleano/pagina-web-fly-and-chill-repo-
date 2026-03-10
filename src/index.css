@@ -13,6 +13,21 @@
   --color-brand-green: #76bbca;
   --color-brand-dark: #0f171a;
   --color-brand-gray: #1e292e;
+
+  --animate-pulse-slow: pulse-slow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.05); }
+  }
+}
+
+@utility border-text-white {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.2);
+}
+
+@utility border-text-black {
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.1);
 }
 
 body {
