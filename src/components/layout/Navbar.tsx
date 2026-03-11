@@ -47,24 +47,21 @@ export function Navbar() {
       >
         <div className="container mx-auto px-4 h-24 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-4 group">
+          <Link to="/" className="flex items-center group">
             <div className="relative">
               <img 
                 src="/logo.png" 
                 alt="Fly and Chill Logo" 
-                className="h-14 w-auto object-contain transition-transform group-hover:scale-110 duration-500"
+                className="h-20 w-auto object-contain transition-all group-hover:scale-110 duration-500"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
                 }}
               />
-              <div className="hidden w-14 h-14 rounded-none bg-brand-primary flex items-center justify-center group-hover:bg-brand-secondary transition-colors duration-500">
-                <span className="text-brand-black font-heading font-black text-2xl italic">F&C</span>
+              <div className="hidden w-20 h-20 rounded-none bg-brand-primary flex items-center justify-center group-hover:bg-brand-secondary transition-colors duration-500">
+                <span className="text-brand-black font-heading font-black text-4xl italic">F&C</span>
               </div>
             </div>
-            <span className="font-heading font-black text-3xl tracking-tighter text-white group-hover:text-brand-primary transition-colors duration-500 hidden lg:block">
-              FLY AND CHILL
-            </span>
           </Link>
 
           {/* Desktop Nav - Bold & Spaced */}

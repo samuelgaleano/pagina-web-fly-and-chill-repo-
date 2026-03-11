@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
-import { Trash2, ArrowRight, ShoppingBag } from "lucide-react";
+import { Trash2, ArrowRight, ShoppingBag, Minus, Plus } from "lucide-react";
+import { motion } from "motion/react";
 
 export function Cart() {
   const { items, updateQuantity, removeFromCart, totalPrice } = useCart();
@@ -9,16 +10,18 @@ export function Cart() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 bg-brand-black">
-        <ShoppingBag className="w-20 h-20 text-brand-gold/20 mb-6" />
-        <h2 className="text-3xl font-heading font-bold text-white mb-4 uppercase tracking-wider">Tu carrito está vacío</h2>
-        <p className="text-gray-400 mb-8 font-sans max-w-md">
-          Parece que aún no has añadido ningún producto premium a tu carrito. 
-          Explora nuestro catálogo y encuentra tu experiencia ideal.
+      <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-6 bg-brand-paper pt-32">
+        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-sm mb-8">
+          <ShoppingBag className="w-10 h-10 text-brand-primary/30" />
+        </div>
+        <h2 className="serif text-4xl italic text-brand-black mb-4">Tu carrito está vacío</h2>
+        <p className="text-gray-500 mb-10 font-sans max-w-md leading-relaxed">
+          Parece que aún no has seleccionado ninguna de nuestras piezas exclusivas. 
+          Explora nuestra colección y encuentra tu experiencia ideal.
         </p>
         <Link to="/shop">
-          <Button size="lg" className="font-bold uppercase tracking-wider">
-            Ir a la Tienda
+          <Button size="lg" className="rounded-full px-12 py-6 text-xs font-black uppercase tracking-widest bg-brand-black text-white hover:bg-brand-primary transition-all">
+            Ir a la Colección
           </Button>
         </Link>
       </div>
@@ -26,115 +29,124 @@ export function Cart() {
   }
 
   return (
-    <div className="bg-brand-black min-h-screen py-12">
-      <div className="container mx-auto px-4 max-w-5xl">
-        <h1 className="text-4xl md:text-5xl font-heading font-black text-white uppercase tracking-tighter mb-12 border-b border-brand-gold/10 pb-6">
-          Tu Carrito
-        </h1>
+    <div className="bg-brand-paper min-h-screen pt-40 pb-24 text-brand-black">
+      <div className="container mx-auto px-6 max-w-6xl">
+        <div className="flex items-center gap-3 mb-12">
+          <span className="w-8 h-[1px] bg-brand-primary"></span>
+          <h1 className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-primary">
+            Tu Selección Personal
+          </h1>
+        </div>
 
-        <div className="flex flex-col lg:flex-row gap-12">
+        <div className="flex flex-col lg:flex-row gap-16">
           {/* Cart Items */}
-          <div className="flex-1 space-y-6">
+          <div className="flex-1 space-y-8">
             {items.map((item) => (
-              <div key={item.id} className="bg-brand-dark border border-brand-gold/10 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-6 relative group">
-                <Link to={`/shop/${item.id}`} className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 bg-black rounded-xl overflow-hidden border border-brand-gold/20">
+              <motion.div 
+                key={item.id} 
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-8 relative group shadow-sm border border-brand-black/5"
+              >
+                <Link to={`/shop/${item.id}`} className="w-32 h-32 sm:w-40 sm:h-40 shrink-0 bg-brand-paper rounded-2xl overflow-hidden group-hover:shadow-xl transition-all duration-500">
                   <img 
                     src={item.image} 
                     alt={item.name} 
-                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                     referrerPolicy="no-referrer"
                   />
                 </Link>
                 
                 <div className="flex-1 flex flex-col w-full">
-                  <div className="flex justify-between items-start mb-2">
+                  <div className="flex justify-between items-start mb-4">
                     <div>
-                      <span className="text-brand-amber text-xs font-bold uppercase tracking-wider mb-1 block">
+                      <span className="text-brand-primary text-[10px] font-bold uppercase tracking-[0.2em] mb-2 block">
                         {item.category}
                       </span>
                       <Link to={`/shop/${item.id}`}>
-                        <h3 className="text-lg sm:text-xl font-heading font-bold text-white hover:text-brand-gold transition-colors line-clamp-1">
+                        <h3 className="text-2xl font-heading font-black text-brand-black uppercase tracking-tighter hover:text-brand-primary transition-colors line-clamp-1">
                           {item.name}
                         </h3>
                       </Link>
                     </div>
                     <button 
                       onClick={() => removeFromCart(item.id)}
-                      className="text-gray-500 hover:text-red-500 transition-colors p-2"
+                      className="text-gray-300 hover:text-red-500 transition-colors p-2"
                       aria-label="Eliminar producto"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
                   
-                  <p className="text-gray-400 text-sm font-sans mb-4 line-clamp-2">
+                  <p className="serif text-lg text-gray-500 italic mb-6">
                     {item.flavor} • {item.cbdContent} CBD
                   </p>
                   
                   <div className="flex items-center justify-between mt-auto">
-                    <div className="flex items-center bg-brand-black border border-brand-gold/20 rounded-lg">
+                    <div className="flex items-center bg-brand-paper rounded-full p-1">
                       <button 
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-brand-gold transition-colors"
+                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-brand-primary transition-colors"
                       >
-                        -
+                        <Minus className="w-4 h-4" />
                       </button>
-                      <span className="w-10 text-center font-bold text-white">{item.quantity}</span>
+                      <span className="w-10 text-center font-bold text-brand-black">{item.quantity}</span>
                       <button 
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-brand-gold transition-colors"
+                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-brand-primary transition-colors"
                       >
-                        +
+                        <Plus className="w-4 h-4" />
                       </button>
                     </div>
-                    <span className="text-xl font-bold text-white">
+                    <span className="serif text-2xl italic text-brand-black">
                       ${(item.price * item.quantity).toFixed(2)}
                     </span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
 
           {/* Order Summary */}
-          <div className="w-full lg:w-96 shrink-0">
-            <div className="bg-brand-dark border border-brand-gold/20 rounded-2xl p-6 sm:p-8 sticky top-28 shadow-2xl shadow-brand-amber/5">
-              <h3 className="text-2xl font-heading font-bold text-white uppercase tracking-wider mb-6 border-b border-brand-gold/10 pb-4">
-                Resumen
+          <div className="w-full lg:w-[400px] shrink-0">
+            <div className="bg-white rounded-3xl p-8 sm:p-10 sticky top-32 shadow-xl shadow-brand-black/5 border border-brand-black/5">
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-primary mb-10">
+                Resumen de Compra
               </h3>
               
-              <div className="space-y-4 mb-8 font-sans">
-                <div className="flex justify-between text-gray-400">
+              <div className="space-y-6 mb-10 font-sans">
+                <div className="flex justify-between text-gray-500 text-sm font-medium">
                   <span>Subtotal</span>
-                  <span className="text-white">${totalPrice.toFixed(2)}</span>
+                  <span className="text-brand-black">${totalPrice.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-gray-400">
+                <div className="flex justify-between text-gray-500 text-sm font-medium">
                   <span>Envío estimado</span>
-                  <span className="text-white">Calculado en checkout</span>
+                  <span className="text-brand-black">Gratis</span>
                 </div>
-                <div className="flex justify-between text-gray-400">
+                <div className="flex justify-between text-gray-500 text-sm font-medium">
                   <span>Impuestos</span>
-                  <span className="text-white">Calculado en checkout</span>
+                  <span className="text-brand-black">Calculado en checkout</span>
                 </div>
-                <div className="border-t border-brand-gold/10 pt-4 flex justify-between items-center mt-4">
-                  <span className="text-lg font-bold text-white uppercase">Total Estimado</span>
-                  <span className="text-3xl font-black text-brand-gold">${totalPrice.toFixed(2)}</span>
+                <div className="border-t border-brand-black/5 pt-8 flex justify-between items-end mt-8">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Total Estimado</span>
+                  <span className="serif text-5xl italic text-brand-black">${totalPrice.toFixed(2)}</span>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <Button 
                   size="lg" 
-                  className="w-full text-lg font-bold uppercase tracking-wider"
+                  className="w-full h-16 text-xs font-black uppercase tracking-widest bg-brand-black text-white hover:bg-brand-primary rounded-full transition-all shadow-xl shadow-brand-black/10"
                   onClick={() => navigate("/checkout")}
                 >
-                  Proceder al Pago <ArrowRight className="w-5 h-5 ml-2" />
+                  Proceder al Pago <ArrowRight className="w-4 h-4 ml-3" />
                 </Button>
                 
-                <div className="relative flex items-center py-2">
-                  <div className="flex-grow border-t border-brand-gold/10"></div>
-                  <span className="flex-shrink-0 mx-4 text-gray-500 text-xs uppercase tracking-widest">O</span>
-                  <div className="flex-grow border-t border-brand-gold/10"></div>
+                <div className="relative flex items-center py-4">
+                  <div className="flex-grow border-t border-brand-black/5"></div>
+                  <span className="flex-shrink-0 mx-4 text-gray-300 text-[10px] font-bold uppercase tracking-widest">O</span>
+                  <div className="flex-grow border-t border-brand-black/5"></div>
                 </div>
 
                 <a 
@@ -143,14 +155,14 @@ export function Cart() {
                   rel="noopener noreferrer"
                   className="block w-full"
                 >
-                  <Button variant="green" size="lg" className="w-full font-bold uppercase tracking-wider">
+                  <Button variant="outline" size="lg" className="w-full h-16 text-xs font-black uppercase tracking-widest border-brand-black/10 hover:border-brand-primary rounded-full transition-all">
                     Comprar vía WhatsApp
                   </Button>
                 </a>
               </div>
               
-              <p className="text-xs text-gray-500 text-center mt-6 font-sans">
-                Al proceder, confirmas que eres mayor de 21 años.
+              <p className="text-[10px] font-bold text-gray-400 text-center mt-10 uppercase tracking-widest leading-relaxed">
+                Al proceder, confirmas que eres <br /> mayor de 21 años.
               </p>
             </div>
           </div>

@@ -25,6 +25,14 @@ export function Home() {
         </div>
         
         <div className="relative z-10 container mx-auto px-4">
+          <div className="absolute top-20 right-0 md:right-40 pointer-events-none select-none z-20">
+            <img 
+              src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Fly.png" 
+              alt="Mosca volando" 
+              className="w-24 h-24 animate-fly"
+              referrerPolicy="no-referrer"
+            />
+          </div>
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}

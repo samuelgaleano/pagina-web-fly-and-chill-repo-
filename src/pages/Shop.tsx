@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { products } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
-import { Search, Filter, ShoppingCart, Eye } from "lucide-react";
+import { Search, Filter, ShoppingCart, Eye, ArrowRight } from "lucide-react";
 
 export function Shop() {
   const { addToCart } = useCart();
@@ -21,42 +21,49 @@ export function Shop() {
   });
 
   return (
-    <div className="bg-white min-h-screen pt-32 pb-24 text-brand-black">
-      <div className="container mx-auto px-4">
-        {/* Header - Bold & Minimal */}
-        <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
-          <div className="max-w-xl">
-            <h1 className="text-7xl md:text-8xl font-heading font-black uppercase tracking-tighter leading-[0.85] mb-6">
-              NUESTRA <br /> <span className="text-brand-primary">TIENDA</span>
+    <div className="bg-brand-paper min-h-screen pt-40 pb-24 text-brand-black">
+      <div className="container mx-auto px-6">
+        {/* Header - Editorial Style */}
+        <div className="flex flex-col lg:flex-row justify-between items-baseline mb-24 gap-12">
+          <div className="max-w-2xl">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="w-8 h-[1px] bg-brand-primary"></span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-primary">
+                Catálogo Exclusivo
+              </span>
+            </div>
+            <h1 className="serif text-7xl md:text-9xl font-light italic leading-none mb-8">
+              Nuestra <br /> <span className="font-bold not-italic">Colección</span>
             </h1>
-            <p className="text-xl text-gray-500 font-sans">
-              Explora nuestra selección premium de destilados y accesorios diseñados para elevar tu estilo de vida.
+            <p className="text-xl text-gray-600 font-sans leading-relaxed max-w-lg">
+              Explora una selección curada de destilados de la más alta pureza, 
+              diseñados para quienes no aceptan menos que la excelencia.
             </p>
           </div>
           
-          {/* Search - Clean & Modern */}
-          <div className="relative w-full md:w-96">
+          {/* Search - Refined */}
+          <div className="relative w-full lg:w-96 group">
             <input
               type="text"
-              placeholder="BUSCAR PRODUCTOS..."
+              placeholder="BUSCAR DESTILADO..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-gray-100 border-none rounded-none pl-12 pr-6 py-5 text-sm font-black uppercase tracking-widest text-brand-black focus:ring-2 focus:ring-brand-primary transition-all"
+              className="w-full bg-white border-b-2 border-brand-black/10 rounded-none pl-12 pr-6 py-6 text-xs font-bold uppercase tracking-widest text-brand-black focus:border-brand-primary transition-all outline-none"
             />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-black/30 group-focus-within:text-brand-primary transition-colors" />
           </div>
         </div>
 
-        {/* Categories Bar - Minimalist */}
-        <div className="flex flex-wrap gap-4 mb-16 border-b border-gray-100 pb-8">
+        {/* Categories Bar - Minimalist Pills */}
+        <div className="flex flex-wrap gap-3 mb-20">
           {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-8 py-3 text-xs font-black uppercase tracking-[0.2em] transition-all ${
+              className={`px-8 py-3 text-[10px] font-bold uppercase tracking-[0.2em] rounded-full transition-all duration-300 ${
                 selectedCategory === cat 
-                  ? "bg-brand-black text-white" 
-                  : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-brand-black"
+                  ? "bg-brand-black text-white shadow-xl shadow-brand-black/20" 
+                  : "bg-white text-gray-400 hover:bg-gray-100 hover:text-brand-black border border-brand-black/5"
               }`}
             >
               {cat === "All" ? "TODOS" : cat}
@@ -64,13 +71,13 @@ export function Shop() {
           ))}
         </div>
 
-        {/* Product Grid - Clean High Impact */}
+        {/* Product Grid */}
         <div className="flex-1">
           {filteredProducts.length === 0 ? (
-            <div className="text-center py-32 bg-gray-50">
-              <p className="text-gray-400 font-black uppercase tracking-widest mb-8">No se encontraron productos.</p>
+            <div className="text-center py-40 bg-white rounded-3xl border border-brand-black/5">
+              <p className="serif text-3xl italic text-gray-400 mb-8">No hemos encontrado lo que buscas.</p>
               <Button 
-                className="bg-brand-black text-white rounded-none px-10 py-6 font-black uppercase tracking-widest"
+                className="bg-brand-black text-white rounded-full px-12 py-6 text-xs font-bold uppercase tracking-widest hover:bg-brand-primary transition-all"
                 onClick={() => {
                   setSearchTerm("");
                   setSelectedCategory("All");
@@ -80,60 +87,62 @@ export function Shop() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
-              {filteredProducts.map((product) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-20">
+              {filteredProducts.map((product, i) => (
                 <motion.div 
                   key={product.id}
                   layout
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="group cursor-pointer"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="group"
                 >
-                  <Link to={`/shop/${product.id}`} className="block relative aspect-[4/5] overflow-hidden bg-gray-100 mb-6">
+                  <Link to={`/shop/${product.id}`} className="block relative aspect-[3/4] overflow-hidden bg-white mb-8 rounded-2xl shadow-sm group-hover:shadow-2xl transition-all duration-700">
                     <img 
                       src={product.image} 
                       alt={product.name} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="absolute top-4 left-4 flex flex-col gap-2">
-                      <span className="bg-brand-black text-white text-[10px] font-black px-3 py-1 uppercase tracking-widest">
+                    <div className="absolute top-6 left-6 flex flex-col gap-2">
+                      <div className="bg-brand-black text-white text-[9px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest">
                         {product.cbdContent} CBD
-                      </span>
+                      </div>
                       {product.stock <= 10 && product.stock > 0 && (
-                        <span className="bg-brand-secondary text-white text-[10px] font-black px-3 py-1 uppercase tracking-widest">
+                        <div className="bg-brand-secondary text-white text-[9px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest">
                           POCO STOCK
-                        </span>
+                        </div>
                       )}
                       {product.stock === 0 && (
-                        <span className="bg-gray-400 text-white text-[10px] font-black px-3 py-1 uppercase tracking-widest">
+                        <div className="bg-gray-400 text-white text-[9px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest">
                           AGOTADO
-                        </span>
+                        </div>
                       )}
                     </div>
                     
-                    {/* Quick Add Button */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-brand-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center p-6">
                       <Button 
-                        className="w-full bg-brand-black text-white hover:bg-brand-primary rounded-none font-black uppercase tracking-widest py-4"
+                        className="w-full bg-white text-brand-black hover:bg-brand-primary hover:text-white rounded-full font-black uppercase tracking-widest py-5 text-xs"
                         disabled={product.stock === 0}
                         onClick={(e) => {
                           e.preventDefault();
                           addToCart(product);
                         }}
                       >
-                        {product.stock === 0 ? "AGOTADO" : "Añadir +"}
+                        {product.stock === 0 ? "AGOTADO" : "Añadir al Carrito"}
                       </Button>
                     </div>
                   </Link>
-                  <div className="space-y-2">
-                    <div className="text-[10px] font-black text-brand-primary uppercase tracking-[0.2em]">{product.category}</div>
+                  
+                  <div className="space-y-3 text-center">
+                    <div className="text-[10px] font-bold text-brand-primary uppercase tracking-[0.3em]">{product.category}</div>
                     <Link to={`/shop/${product.id}`}>
-                      <h3 className="text-2xl font-heading font-black uppercase tracking-tight group-hover:text-brand-primary transition-colors">
+                      <h3 className="text-2xl font-heading font-black uppercase tracking-tighter group-hover:text-brand-primary transition-colors">
                         {product.name}
                       </h3>
                     </Link>
-                    <div className="text-xl font-sans font-bold text-gray-400">${product.price.toFixed(2)}</div>
+                    <div className="serif text-2xl italic text-gray-500">${product.price.toFixed(2)}</div>
                   </div>
                 </motion.div>
               ))}

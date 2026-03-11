@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Bot } from "lucide-react";
+import { MessageSquare, X, Send, Bot, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./Button";
 import { GoogleGenAI } from "@google/genai";
@@ -66,13 +66,18 @@ export function AIAssistant() {
   return (
     <>
       {/* Floating Button */}
-      <button
+      <motion.button
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-brand-gold text-brand-black flex items-center justify-center shadow-lg shadow-brand-gold/20 hover:scale-110 transition-transform"
+        className="fixed bottom-8 right-8 z-40 w-16 h-16 rounded-full bg-brand-black text-white flex items-center justify-center shadow-2xl shadow-brand-black/20 border border-white/10 group"
         aria-label="Asistente IA"
       >
-        <Bot className="w-7 h-7" />
-      </button>
+        <div className="absolute inset-0 bg-brand-primary rounded-full scale-0 group-hover:scale-100 transition-transform duration-500 -z-10" />
+        <Sparkles className="w-7 h-7 group-hover:text-brand-black transition-colors duration-500" />
+      </motion.button>
 
       {/* Chat Modal */}
       <AnimatePresence>
@@ -81,17 +86,17 @@ export function AIAssistant() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 bg-brand-dark border border-brand-gold/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden h-[500px] max-h-[80vh]"
+            className="fixed bottom-32 right-8 z-50 w-80 sm:w-96 bg-white rounded-[2rem] shadow-2xl flex flex-col overflow-hidden h-[600px] max-h-[80vh] border border-brand-black/5"
           >
             {/* Header */}
-            <div className="bg-brand-black p-4 border-b border-brand-gold/10 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-brand-gold flex items-center justify-center text-brand-black">
+            <div className="bg-brand-black p-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-brand-primary flex items-center justify-center text-brand-black shadow-lg shadow-brand-primary/20">
                   <Bot className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-heading font-bold text-brand-gold text-sm uppercase tracking-wider">Fly Bot</h3>
-                  <p className="text-xs text-gray-400">En línea</p>
+                  <h3 className="text-[10px] font-bold text-brand-primary uppercase tracking-[0.3em]">Fly Bot</h3>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest">En línea</p>
                 </div>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white transition-colors">
@@ -100,14 +105,14 @@ export function AIAssistant() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-brand-black/50">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-brand-paper/30 no-scrollbar">
               {messages.map((msg, idx) => (
                 <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   <div 
-                    className={`max-w-[80%] p-3 rounded-2xl text-sm ${
+                    className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${
                       msg.role === "user" 
-                        ? "bg-brand-amber text-brand-black rounded-tr-none" 
-                        : "bg-brand-gray text-white rounded-tl-none border border-brand-gold/10"
+                        ? "bg-brand-black text-white rounded-tr-none shadow-xl shadow-brand-black/10" 
+                        : "bg-white text-brand-black rounded-tl-none border border-brand-black/5 shadow-sm serif italic text-base"
                     }`}
                   >
                     {msg.content}
@@ -116,10 +121,10 @@ export function AIAssistant() {
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-brand-gray text-white p-3 rounded-2xl rounded-tl-none border border-brand-gold/10 text-sm flex gap-1 items-center">
-                    <span className="w-2 h-2 bg-brand-gold rounded-full animate-bounce"></span>
-                    <span className="w-2 h-2 bg-brand-gold rounded-full animate-bounce delay-75"></span>
-                    <span className="w-2 h-2 bg-brand-gold rounded-full animate-bounce delay-150"></span>
+                  <div className="bg-white text-brand-black p-4 rounded-2xl rounded-tl-none border border-brand-black/5 shadow-sm flex gap-2 items-center">
+                    <span className="w-1.5 h-1.5 bg-brand-primary rounded-full animate-bounce"></span>
+                    <span className="w-1.5 h-1.5 bg-brand-primary rounded-full animate-bounce delay-150"></span>
+                    <span className="w-1.5 h-1.5 bg-brand-primary rounded-full animate-bounce delay-300"></span>
                   </div>
                 </div>
               )}
@@ -127,19 +132,19 @@ export function AIAssistant() {
             </div>
 
             {/* Input */}
-            <div className="p-4 bg-brand-black border-t border-brand-gold/10">
+            <div className="p-6 bg-white border-t border-brand-black/5">
               <form 
                 onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-                className="flex gap-2"
+                className="flex gap-3"
               >
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Escribe tu mensaje..."
-                  className="flex-1 bg-brand-dark border border-brand-gold/20 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-brand-amber transition-colors"
+                  className="flex-1 bg-brand-paper border-none rounded-full px-6 py-4 text-sm text-brand-black focus:ring-2 focus:ring-brand-primary transition-all outline-none"
                 />
-                <Button type="submit" size="icon" variant="amber" className="rounded-full shrink-0" disabled={isLoading || !input.trim()}>
+                <Button type="submit" className="w-14 h-14 rounded-full bg-brand-black text-white hover:bg-brand-primary hover:text-brand-black transition-all shrink-0 flex items-center justify-center" disabled={isLoading || !input.trim()}>
                   <Send className="w-4 h-4" />
                 </Button>
               </form>
