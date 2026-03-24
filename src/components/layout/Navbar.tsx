@@ -65,7 +65,7 @@ export function Navbar() {
                 <img 
                   src="/logo.png" 
                   alt="Fly and Chill Logo" 
-                  className="h-16 w-auto object-contain transition-all group-hover:scale-110 duration-500"
+                  className="h-[70px] w-auto object-contain transition-all group-hover:scale-110 duration-500"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
