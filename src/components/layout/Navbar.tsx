@@ -23,86 +23,94 @@ export function Navbar() {
     setIsMobileMenuOpen(false);
   }, [location]);
 
-  const navLinks = [
+  const leftLinks = [
     { name: "Inicio", path: "/" },
     { name: "Tienda", path: "/shop" },
     { name: "Comunidad", path: "/community" },
-    { name: "Nosotros", path: "/about" },
+  ];
+
+  const rightLinks = [
     { name: "Contacto", path: "/contact" },
   ];
 
   return (
     <>
-      {/* Promo Banner */}
-      <div className="bg-brand-gold text-brand-black text-xs font-bold text-center py-2 px-4 tracking-wider uppercase">
-        10% de descuento en tu primer pedido - ¡Regístrate ahora!
-      </div>
-
       <header
-        className={`sticky top-0 z-40 w-full transition-all duration-500 ${
+        className={`fixed top-0 z-40 w-full transition-all duration-500 group/header ${
           isScrolled 
-            ? "bg-brand-black/95 backdrop-blur-xl border-b border-white/5 shadow-2xl" 
-            : "bg-brand-black border-b border-transparent"
+            ? "bg-brand-black/80 backdrop-blur-xl border-b border-white/5 shadow-2xl" 
+            : "bg-transparent border-b border-transparent hover:bg-brand-black/40 hover:backdrop-blur-sm"
         }`}
       >
-        <div className="container mx-auto px-4 h-24 flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center group">
-            <div className="relative">
-              <img 
-                src="/logo.png" 
-                alt="Fly and Chill Logo" 
-                className="h-20 w-auto object-contain transition-all group-hover:scale-110 duration-500"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                }}
-              />
-              <div className="hidden w-20 h-20 rounded-none bg-brand-primary flex items-center justify-center group-hover:bg-brand-secondary transition-colors duration-500">
-                <span className="text-brand-black font-heading font-black text-4xl italic">F&C</span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Desktop Nav - Bold & Spaced */}
-          <nav className="hidden md:flex items-center gap-12">
-            {navLinks.map((link) => (
+        <div className="container mx-auto px-4 h-24 flex items-center justify-between relative">
+          {/* Left Nav - Undergold Style */}
+          <nav className="hidden md:flex items-center gap-8">
+            {leftLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
-                className={`font-heading font-black uppercase tracking-[0.2em] text-xs transition-all hover:text-brand-primary relative group ${
+                className={`font-heading font-black uppercase tracking-[0.2em] text-[10px] transition-all hover:text-brand-primary ${
                   location.pathname === link.path ? "text-brand-primary" : "text-white"
                 }`}
               >
                 {link.name}
-                <span className={`absolute -bottom-2 left-0 w-0 h-0.5 bg-brand-primary transition-all duration-300 group-hover:w-full ${location.pathname === link.path ? "w-full" : ""}`} />
               </Link>
             ))}
           </nav>
 
-          {/* Icons - Clean & Minimal */}
-          <div className="flex items-center gap-8">
-            <button className="text-white hover:text-brand-primary transition-colors hidden sm:block">
-              <Search className="w-6 h-6" />
+          {/* Centered Logo */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <Link to="/" className="flex items-center group">
+              <div className="relative">
+                <img 
+                  src="/logo.png" 
+                  alt="Fly and Chill Logo" 
+                  className="h-16 w-auto object-contain transition-all group-hover:scale-110 duration-500"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+                <div className="hidden w-16 h-16 rounded-none bg-brand-primary flex items-center justify-center group-hover:bg-brand-secondary transition-colors duration-500">
+                  <span className="text-brand-black font-heading font-black text-2xl italic">F&C</span>
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          {/* Icons - Right Aligned */}
+          <div className="flex items-center gap-6">
+            <nav className="hidden md:flex items-center gap-6">
+              {rightLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  className={`font-heading font-black uppercase tracking-[0.2em] text-[10px] transition-all hover:text-brand-primary ${
+                    location.pathname === link.path ? "text-brand-primary" : "text-white"
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </nav>
+            <button className="text-white hover:text-brand-primary transition-colors hidden sm:block text-[10px] font-black uppercase tracking-widest">
+              SALE
             </button>
             <Link to="/cart" className="relative text-white hover:text-brand-primary transition-colors">
-              <ShoppingCart className="w-6 h-6" />
+              <ShoppingCart className="w-5 h-5" />
               {totalItems > 0 && (
-                <span className="absolute -top-3 -right-3 bg-brand-primary text-brand-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-brand-black">
+                <span className="absolute -top-2 -right-2 bg-brand-primary text-brand-black text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center ring-1 ring-brand-black">
                   {totalItems}
                 </span>
               )}
             </Link>
-            <button className="text-white hover:text-brand-primary transition-colors hidden sm:block">
-              <User className="w-6 h-6" />
-            </button>
 
             {/* Mobile Menu Toggle */}
             <button 
               className="md:hidden text-white hover:text-brand-primary transition-colors"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
@@ -118,7 +126,7 @@ export function Navbar() {
             className="fixed inset-0 z-30 pt-32 bg-brand-black/95 backdrop-blur-xl md:hidden"
           >
             <nav className="flex flex-col items-center gap-8 p-8">
-              {navLinks.map((link) => (
+              {[...leftLinks, ...rightLinks].map((link) => (
                 <Link
                   key={link.name}
                   to={link.path}
@@ -130,12 +138,14 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="flex gap-6 mt-8">
-                <button className="w-12 h-12 rounded-full bg-brand-dark flex items-center justify-center text-brand-gold">
-                  <Search className="w-5 h-5" />
-                </button>
-                <button className="w-12 h-12 rounded-full bg-brand-dark flex items-center justify-center text-brand-gold">
-                  <User className="w-5 h-5" />
-                </button>
+                <Link to="/cart" className="w-12 h-12 rounded-full bg-brand-dark flex items-center justify-center text-brand-gold relative">
+                  <ShoppingCart className="w-5 h-5" />
+                  {totalItems > 0 && (
+                    <span className="absolute top-0 right-0 bg-brand-primary text-brand-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-brand-black">
+                      {totalItems}
+                    </span>
+                  )}
+                </Link>
                 <a href="https://wa.me/1234567890" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-brand-green/20 flex items-center justify-center text-brand-green">
                   <MessageCircle className="w-5 h-5" />
                 </a>

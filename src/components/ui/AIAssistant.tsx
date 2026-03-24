@@ -21,6 +21,12 @@ export function AIAssistant() {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener('open-ai-assistant', handleOpen);
+    return () => window.removeEventListener('open-ai-assistant', handleOpen);
+  }, []);
+
   const handleSend = async () => {
     if (!input.trim()) return;
 

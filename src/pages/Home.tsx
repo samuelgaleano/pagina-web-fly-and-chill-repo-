@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { products } from "@/data/products";
 import { useCart } from "@/context/CartContext";
-import { ShoppingCart, Eye, ArrowRight } from "lucide-react";
+import { ShoppingCart, Eye, ArrowRight, Headphones } from "lucide-react";
 
 export function Home() {
   const { addToCart } = useCart();
@@ -11,20 +11,103 @@ export function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-brand-black">
-      {/* Hero Section - Full Viewport, Bold & Immersive */}
-      <section className="relative h-[90vh] flex items-center overflow-hidden">
+      {/* Hero Section - Undergold Style with Video Background */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <img 
-            src="https://picsum.photos/seed/vibe/1920/1080?blur=2" 
-            alt="Fly and Chill Lifestyle" 
-            className="w-full h-full object-cover opacity-40 scale-105 animate-pulse-slow"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-brand-black/20 via-brand-black/40 to-brand-black" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(118,187,202,0.2)_0%,transparent_70%)]" />
+          <video 
+            autoPlay 
+            muted 
+            loop 
+            playsInline
+            className="w-full h-full object-cover"
+          >
+            <source 
+              src="/hero-video.mp4" 
+              type="video/mp4" 
+            />
+            Your browser does not support the video tag.
+          </video>
+          <div className="absolute inset-0 bg-black/50" />
         </div>
         
-        <div className="relative z-10 container mx-auto px-4">
+        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12 mt-[8cm]"
+          >
+            <h1 className="text-4xl md:text-7xl font-heading font-black text-white uppercase tracking-tighter mb-4 leading-none mt-[2cm]">
+              vuela y eleva tus <span className="text-brand-secondary">Vibes</span>
+            </h1>
+            <p className="text-lg md:text-2xl text-white font-sans mb-12 tracking-tight flex items-center justify-center flex-wrap">
+              prueba nuestro <span className="text-brand-primary font-black uppercase mx-2">best seller</span> y <span className="text-white mx-2">ponte</span> 
+              <img 
+                src="/chill.png" 
+                alt="CHILL" 
+                className="h-[91px] md:h-[130px] object-contain transform -rotate-3 hover:scale-110 transition-transform duration-300 ml-[-1cm]"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const span = document.createElement('span');
+                  span.className = "font-cursive text-4xl md:text-6xl text-brand-secondary uppercase ml-2 inline-block transform -rotate-3";
+                  span.innerText = "CHILL";
+                  e.currentTarget.parentNode?.appendChild(span);
+                }}
+              />
+            </p>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 relative -top-[2cm]">
+              <Link to="/shop">
+                <Button 
+                  size="lg" 
+                  className="h-16 px-8 text-lg md:text-xl font-black tracking-[0.2em] cursor-pointer border-2 border-brand-primary bg-brand-primary text-brand-black rounded-xl hover:bg-brand-primary/10 hover:text-brand-primary hover:backdrop-blur-md transition-all duration-300 shadow-[0_0_20px_rgba(118,187,202,0.3)] hover:shadow-none"
+                >
+                  COMPRALO AHORA
+                </Button>
+              </Link>
+              <button 
+                onClick={() => window.dispatchEvent(new CustomEvent('open-ai-assistant'))}
+                className="h-72 max-w-[840px] w-full relative cursor-pointer"
+              >
+                <img 
+                  src="/asistente.png" 
+                  alt="Solicitar asistente inmediato" 
+                  className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    // Fallback to the previous button style if image is missing
+                    e.currentTarget.style.display = 'none';
+                    const btn = document.createElement('div');
+                    btn.className = "h-72 px-8 text-lg md:text-xl font-black tracking-[0.1em] border-2 border-brand-secondary text-white bg-brand-secondary/20 rounded-xl flex items-center justify-center gap-3 uppercase text-center leading-tight";
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-headphones w-12 h-12 flex-shrink-0 text-brand-secondary"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"></path></svg><span>Cómo solicitar asistente inmediato con tu compra</span>';
+                    e.currentTarget.parentNode?.appendChild(btn);
+                  }}
+                />
+              </button>
+            </div>
+          </motion.div>
+
+          <div className="w-full flex justify-around items-center mt-12">
+            <Link 
+              to="/shop?category=hombre" 
+              className="group relative"
+            >
+              <span className="text-2xl md:text-4xl font-heading font-black text-white uppercase tracking-tighter border-b-2 border-white pb-1 group-hover:text-brand-primary group-hover:border-brand-primary transition-all duration-300">
+                HOMBRE
+              </span>
+            </Link>
+
+            <Link 
+              to="/shop?category=mujer" 
+              className="group relative"
+            >
+              <span className="text-2xl md:text-4xl font-heading font-black text-white uppercase tracking-tighter border-b-2 border-white pb-1 group-hover:text-brand-primary group-hover:border-brand-primary transition-all duration-300">
+                MUJER
+              </span>
+            </Link>
+          </div>
+
+          {/* Flying Fly - Keeping the previous request's feature */}
           <div className="absolute top-20 right-0 md:right-40 pointer-events-none select-none z-20">
             <img 
               src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Fly.png" 
@@ -33,36 +116,6 @@ export function Home() {
               referrerPolicy="no-referrer"
             />
           </div>
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="max-w-3xl"
-          >
-            <span className="inline-block px-4 py-1.5 bg-brand-primary/20 border border-brand-primary/30 text-brand-primary text-xs font-black uppercase tracking-[0.2em] rounded-full mb-6">
-              Estilo de Vida & Relajación
-            </span>
-            <h1 className="text-6xl md:text-8xl lg:text-9xl font-heading font-black text-white uppercase tracking-tighter mb-8 leading-[0.85]">
-              FLY <br />
-              <span className="text-brand-primary">&</span> CHILL
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-300 font-sans mb-12 max-w-xl leading-relaxed">
-              Destilados de alta pureza diseñados para elevar tu experiencia. 
-              97% CBD. 100% Auténtico.
-            </p>
-            <div className="flex flex-wrap gap-6">
-              <Link to="/shop">
-                <Button size="lg" className="h-16 px-10 text-lg font-black tracking-widest bg-white text-brand-black hover:bg-brand-primary hover:text-white transition-all duration-300 rounded-none">
-                  COMPRAR AHORA
-                </Button>
-              </Link>
-              <Link to="/community">
-                <Button variant="outline" size="lg" className="h-16 px-10 text-lg font-black tracking-widest border-2 border-white/20 hover:border-brand-primary transition-all duration-300 rounded-none">
-                  COMUNIDAD
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
         </div>
       </section>
 
