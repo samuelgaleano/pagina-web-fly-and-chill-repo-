@@ -1,19 +1,29 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { products } from "@/data/products";
+import { useShop } from "@/context/ShopContext";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
-import { Star, ArrowLeft, ShieldCheck, Truck, Droplet, Minus, Plus } from "lucide-react";
+import { Star, ArrowLeft, ShieldCheck, Truck, Droplet, Minus, Plus, Loader2 } from "lucide-react";
 
 export function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { products, loading } = useShop();
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const product = products.find(p => p.id === id);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-brand-paper">
+        <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -38,14 +48,15 @@ export function ProductDetail() {
           {/* Image Gallery */}
           <div className="space-y-6">
             <motion.div 
+              key={activeImageIndex}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="aspect-square bg-white rounded-3xl shadow-sm overflow-hidden relative group"
             >
               <img 
-                src={product.image} 
+                src={product.images[activeImageIndex]} 
                 alt={product.name} 
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                className="w-full h-full object-contain p-8 group-hover:scale-105 transition-transform duration-1000"
                 referrerPolicy="no-referrer"
               />
               <div className="absolute top-6 left-6">
@@ -54,10 +65,16 @@ export function ProductDetail() {
                 </div>
               </div>
             </motion.div>
-            <div className="grid grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <button key={i} className="aspect-square bg-white rounded-2xl shadow-sm overflow-hidden hover:ring-2 ring-brand-primary transition-all">
-                  <img src={`${product.image}?sig=${i}`} alt="" className="w-full h-full object-cover opacity-70 hover:opacity-100 transition-opacity" referrerPolicy="no-referrer" />
+            <div className="grid grid-cols-6 gap-4">
+              {product.images.map((img, i) => (
+                <button 
+                  key={i} 
+                  onClick={() => setActiveImageIndex(i)}
+                  className={`aspect-square bg-white rounded-2xl shadow-sm overflow-hidden transition-all ${
+                    activeImageIndex === i ? "ring-2 ring-brand-primary" : "opacity-50 hover:opacity-100"
+                  }`}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 </button>
               ))}
             </div>
@@ -68,7 +85,7 @@ export function ProductDetail() {
             <div className="flex items-center gap-3 mb-6">
               <span className="text-brand-primary text-[10px] font-bold uppercase tracking-[0.3em]">{product.category}</span>
               <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-              <span className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.3em]">{product.flavor}</span>
+              <span className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.3em]">{product.flavors.join(" / ")}</span>
             </div>
             
             <h1 className="text-5xl lg:text-7xl font-heading font-black text-brand-black uppercase tracking-tighter leading-none mb-6">
@@ -236,7 +253,7 @@ export function ProductDetail() {
                 >
                   <Link to={`/shop/${related.id}`} className="block relative aspect-square overflow-hidden bg-white rounded-3xl shadow-sm mb-6">
                     <img 
-                      src={related.image} 
+                      src={related.images[0]} 
                       alt={related.name} 
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                       referrerPolicy="no-referrer"

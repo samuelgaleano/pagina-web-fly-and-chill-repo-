@@ -1,28 +1,52 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { products } from "@/data/products";
+import { useShop } from "@/context/ShopContext";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
-import { Search, ShoppingCart, Filter, X, ChevronRight } from "lucide-react";
+import { Search, ShoppingCart, Filter, X, ChevronRight, Database, WifiOff } from "lucide-react";
+import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
+import { collection, doc, setDoc, writeBatch } from "firebase/firestore";
+import { products as initialProducts } from "@/data/products";
 
 export function Shop() {
+  const { products, loading, isAdmin, isOffline } = useShop();
   const { addToCart } = useCart();
-  const categories = useMemo(() => Array.from(new Set(products.map(p => p.category))), []);
-  const flavors = useMemo(() => Array.from(new Set(products.map(p => p.flavor))), []);
-  const maxPrice = useMemo(() => Math.ceil(Math.max(...products.map(p => p.price), 0)), []);
+  
+  const categories = useMemo(() => Array.from(new Set(products.map(p => p.category))), [products]);
+  const flavors = useMemo(() => Array.from(new Set(products.flatMap(p => p.flavors))), [products]);
+  const maxPrice = useMemo(() => Math.ceil(Math.max(...products.map(p => p.price), 0)), [products]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState({ min: 0, max: maxPrice });
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-  // Update priceRange when maxPrice changes (e.g. products load)
-  useMemo(() => {
-    setPriceRange(prev => ({ ...prev, max: maxPrice }));
+  // Update priceRange when maxPrice changes
+  useEffect(() => {
+    if (maxPrice > 0) {
+      setPriceRange(prev => ({ ...prev, max: maxPrice }));
+    }
   }, [maxPrice]);
+
+  const seedDatabase = async () => {
+    if (!confirm("¿Estás seguro de que quieres poblar la base de datos con los productos iniciales?")) return;
+    
+    const batch = writeBatch(db);
+    initialProducts.forEach(product => {
+      const docRef = doc(collection(db, "products"), product.id);
+      batch.set(docRef, product);
+    });
+
+    try {
+      await batch.commit();
+      alert("Base de datos poblada con éxito.");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, "products");
+    }
+  };
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategories(prev => 
@@ -42,13 +66,23 @@ export function Shop() {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           p.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(p.category);
-    const matchesFlavor = selectedFlavors.length === 0 || selectedFlavors.includes(p.flavor);
+    const matchesFlavor = selectedFlavors.length === 0 || p.flavors.some(f => selectedFlavors.includes(f));
     const matchesPrice = p.price >= priceRange.min && p.price <= priceRange.max;
     return matchesSearch && matchesCategory && matchesFlavor && matchesPrice;
   });
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  if (loading && products.length === 0) {
+    return (
+      <div className="bg-brand-black min-h-screen pt-32 flex items-center justify-center">
+        <div className="text-brand-primary animate-pulse font-heading font-black text-2xl uppercase tracking-widest">
+          Cargando Inventario...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-brand-black min-h-screen pt-32 pb-24 text-white">
@@ -183,9 +217,28 @@ export function Shop() {
           {/* Product Grid Area */}
           <section className="flex-grow">
             <div className="flex flex-col sm:flex-row justify-between items-baseline mb-12 gap-4">
-              <h2 className="text-4xl md:text-5xl font-heading font-black uppercase tracking-tighter">
-                Explora la <span className="text-brand-primary italic font-light lowercase serif">Colección Elite</span>
-              </h2>
+              <div className="flex flex-wrap items-center gap-4">
+                <h2 className="text-4xl md:text-5xl font-heading font-black uppercase tracking-tighter">
+                  Explora la <span className="text-brand-primary italic font-light lowercase serif">Colección Elite</span>
+                </h2>
+                {isOffline && (
+                  <div className="flex items-center gap-2 bg-brand-secondary/20 text-brand-secondary px-4 py-2 rounded-full border border-brand-secondary/30 animate-pulse">
+                    <WifiOff className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Modo Offline (Caché)</span>
+                  </div>
+                )}
+                {isAdmin && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={seedDatabase}
+                    className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-brand-black text-[10px] font-black uppercase tracking-widest"
+                  >
+                    <Database className="w-3 h-3 mr-2" />
+                    Poblar DB
+                  </Button>
+                )}
+              </div>
               <div className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
                 Mostrando {paginatedProducts.length} de {filteredProducts.length} productos
               </div>
@@ -224,7 +277,7 @@ export function Shop() {
                       </div>
                       <Link to={`/shop/${product.id}`} className="w-full h-full flex items-center justify-center">
                         <img 
-                          src={product.image} 
+                          src={product.images[0]} 
                           alt={product.name} 
                           className="object-contain h-full w-full group-hover:scale-110 transition-transform duration-700"
                           referrerPolicy="no-referrer"

@@ -51,7 +51,7 @@ export function Cart() {
               >
                 <Link to={`/shop/${item.id}`} className="w-32 h-32 sm:w-40 sm:h-40 shrink-0 bg-brand-paper rounded-2xl overflow-hidden group-hover:shadow-xl transition-all duration-500">
                   <img 
-                    src={item.image} 
+                    src={item.images[0]} 
                     alt={item.name} 
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                     referrerPolicy="no-referrer"
@@ -80,7 +80,7 @@ export function Cart() {
                   </div>
                   
                   <p className="serif text-lg text-gray-500 italic mb-6">
-                    {item.flavor} • {item.cbdContent} CBD
+                    {item.flavors.join(" / ")} • {item.cbdContent} CBD
                   </p>
                   
                   <div className="flex items-center justify-between mt-auto">

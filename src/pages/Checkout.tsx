@@ -210,7 +210,7 @@ export function Checkout() {
                   {items.map(item => (
                     <div key={item.id} className="flex gap-5">
                       <div className="w-20 h-20 rounded-2xl bg-brand-paper overflow-hidden shrink-0">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       </div>
                       <div className="flex-1 py-1">
                         <h4 className="text-xs font-black text-brand-black uppercase tracking-tight line-clamp-1 mb-1">{item.name}</h4>

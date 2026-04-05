@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, ShoppingCart, User, Menu, X, MessageCircle } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, X, MessageCircle, LogOut, LogIn, ShieldCheck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useShop } from "@/context/ShopContext";
+import { signInWithGoogle, logout } from "@/lib/firebase";
 import { Button } from "@/components/ui/Button";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -9,6 +11,7 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { totalItems } = useCart();
+  const { user, isAuthReady, isAdmin } = useShop();
   const location = useLocation();
 
   useEffect(() => {
@@ -56,6 +59,17 @@ export function Navbar() {
                 {link.name}
               </Link>
             ))}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className={`font-heading font-black uppercase tracking-[0.2em] text-[10px] transition-all text-brand-primary hover:text-white flex items-center gap-2 ${
+                  location.pathname === "/admin" ? "underline underline-offset-4" : ""
+                }`}
+              >
+                <ShieldCheck className="w-3 h-3" />
+                Admin
+              </Link>
+            )}
           </nav>
 
           {/* Centered Logo */}
@@ -93,6 +107,29 @@ export function Navbar() {
                 </Link>
               ))}
             </nav>
+            
+            {isAuthReady && (
+              <div className="hidden sm:flex items-center gap-4">
+                {user ? (
+                  <button 
+                    onClick={logout}
+                    className="text-white hover:text-brand-secondary transition-colors text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Salir
+                  </button>
+                ) : (
+                  <button 
+                    onClick={signInWithGoogle}
+                    className="text-white hover:text-brand-primary transition-colors text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Entrar
+                  </button>
+                )}
+              </div>
+            )}
+
             <button className="text-white hover:text-brand-primary transition-colors hidden sm:block text-[10px] font-black uppercase tracking-widest">
               SALE
             </button>

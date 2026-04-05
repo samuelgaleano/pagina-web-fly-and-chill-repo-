@@ -22,25 +22,6 @@ export function Community() {
 
   return (
     <div className="bg-brand-paper min-h-screen pt-20">
-      {/* Hero - Editorial Style */}
-      <section className="relative py-40 overflow-hidden">
-        <div className="container mx-auto px-6 text-center">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <span className="w-8 h-[1px] bg-brand-primary"></span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-primary">
-              Cultura & Estilo
-            </span>
-            <span className="w-8 h-[1px] bg-brand-primary"></span>
-          </div>
-          <h1 className="serif text-7xl md:text-9xl font-light italic leading-none mb-10 text-brand-black">
-            Join the <br /> <span className="font-bold not-italic">Chill Zone</span>
-          </h1>
-          <p className="serif text-2xl text-gray-500 italic leading-relaxed max-w-2xl mx-auto">
-            "Donde el cannabis se encuentra con la cultura digital. Memes, playlists y comunidad."
-          </p>
-        </div>
-      </section>
-
       {/* Playlists & Music - Split Layout */}
       <section className="py-32 bg-white">
         <div className="container mx-auto px-6">
@@ -53,16 +34,15 @@ export function Community() {
                 </h2>
               </div>
               <h3 className="text-5xl font-heading font-black text-brand-black uppercase tracking-tighter mb-8">
-                El Soundtrack <br /> de tu Vuelo
+                Alimenta el <br /> <span className="text-brand-primary">Soundtrack</span>
               </h3>
               <p className="serif text-xl text-gray-500 italic leading-relaxed mb-12">
-                Nuestra comunidad cura las mejores playlists para cada momento. 
-                Ya sea que busques relajarte con un Kush o activarte con una Sativa, 
-                tenemos el soundtrack perfecto para elevar tu experiencia.
+                ¿Tienes ese track que te hace volar? Nuestra comunidad cura las mejores playlists para cada momento. 
+                Sugiérenos tu canción favorita y ayúdanos a construir la vibra perfecta.
               </p>
               
               <div className="bg-brand-paper rounded-3xl p-10 border border-brand-black/5 shadow-sm">
-                <h4 className="text-[10px] font-bold text-brand-black uppercase tracking-widest mb-6">Sugiérenos un track</h4>
+                <h4 className="text-[10px] font-bold text-brand-black uppercase tracking-widest mb-6">Sugiérenos un track para la playlist</h4>
                 <form onSubmit={handleSongSubmit} className="flex gap-3">
                   <input 
                     type="text" 
@@ -80,22 +60,18 @@ export function Community() {
             </div>
             
             <div className="relative group">
-              <div className="aspect-square bg-brand-paper rounded-3xl overflow-hidden border border-brand-black/5 shadow-2xl relative">
-                <img 
-                  src="https://picsum.photos/seed/playlist/1000/1000" 
-                  alt="Playlist Cover" 
-                  className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-brand-black/20 flex items-center justify-center">
-                  <motion.button 
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-2xl text-brand-black"
-                  >
-                    <Play className="w-8 h-8 fill-current" />
-                  </motion.button>
-                </div>
+              <div className="bg-brand-paper rounded-3xl overflow-hidden border border-brand-black/5 shadow-2xl relative">
+                <iframe 
+                  data-testid="embed-iframe" 
+                  style={{ borderRadius: '12px' }} 
+                  src="https://open.spotify.com/embed/playlist/0kt99sSD2NgkzGJTEYJ1zG?utm_source=generator&theme=0" 
+                  width="100%" 
+                  height="450" 
+                  frameBorder="0" 
+                  allowFullScreen 
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                  loading="lazy"
+                ></iframe>
               </div>
               <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-primary/10 rounded-full blur-3xl -z-10" />
             </div>

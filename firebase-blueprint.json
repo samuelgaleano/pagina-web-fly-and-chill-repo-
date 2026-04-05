@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A product available in the shop.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the product." },
+        "description": { "type": "string", "description": "A detailed description of the product." },
+        "price": { "type": "number", "description": "The price of the product in USD." },
+        "category": { "type": "string", "description": "The category of the product (Desechables, CARTS NACIONALES, CARTS IMPORTADOS, BATERIAS, COMBOS)." },
+        "flavor": { "type": "string", "description": "The flavor profile of the product." },
+        "stock": { "type": "integer", "description": "The current quantity available in inventory." },
+        "images": { 
+          "type": "array", 
+          "items": { "type": "string" },
+          "description": "List of URLs to the product images." 
+        },
+        "cbdContent": { "type": "string", "description": "The CBD percentage or content." }
+      },
+      "required": ["name", "price", "category", "stock"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A purchase record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who made the purchase." },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "productId": { "type": "string" },
+              "quantity": { "type": "integer" },
+              "price": { "type": "number" }
+            }
+          }
+        },
+        "total": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "items", "total", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of products available for sale."
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of orders placed by users."
+    }
+  }
+}

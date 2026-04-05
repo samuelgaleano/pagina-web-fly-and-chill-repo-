@@ -14,20 +14,13 @@ export function Home() {
       {/* Hero Section - Undergold Style with Video Background */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <video 
-            autoPlay 
-            muted 
-            loop 
-            playsInline
+          <img 
+            src="/hero-bg-1.png" 
+            alt="Fly and Chill Background" 
             className="w-full h-full object-cover"
-          >
-            <source 
-              src="/hero-video.mp4" 
-              type="video/mp4" 
-            />
-            Your browser does not support the video tag.
-          </video>
-          <div className="absolute inset-0 bg-black/50" />
+            referrerPolicy="no-referrer"
+          />
+          <div className="absolute inset-0 bg-black/40" />
         </div>
         
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-4">
@@ -211,7 +204,7 @@ export function Home() {
               >
                 <Link to={`/shop/${product.id}`} className="block relative aspect-[4/5] overflow-hidden bg-gray-100 mb-6">
                   <img 
-                    src={product.image} 
+                    src={product.images[0]} 
                     alt={product.name} 
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     referrerPolicy="no-referrer"
