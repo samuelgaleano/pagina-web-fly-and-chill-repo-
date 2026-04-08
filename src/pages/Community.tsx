@@ -21,9 +21,9 @@ export function Community() {
   };
 
   return (
-    <div className="bg-brand-paper min-h-screen pt-20">
+    <div className="bg-brand-black min-h-screen pt-20">
       {/* Playlists & Music - Split Layout */}
-      <section className="py-32 bg-white">
+      <section className="py-32 bg-brand-black">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
             <div>
@@ -33,26 +33,26 @@ export function Community() {
                   Fly & Chill Playlists
                 </h2>
               </div>
-              <h3 className="text-5xl font-heading font-black text-brand-black uppercase tracking-tighter mb-8">
+              <h3 className="text-5xl font-heading font-black text-white uppercase tracking-tighter mb-8">
                 Alimenta el <br /> <span className="text-brand-primary">Soundtrack</span>
               </h3>
-              <p className="serif text-xl text-gray-500 italic leading-relaxed mb-12">
+              <p className="serif text-xl text-gray-400 italic leading-relaxed mb-12">
                 ¿Tienes ese track que te hace volar? Nuestra comunidad cura las mejores playlists para cada momento. 
                 Sugiérenos tu canción favorita y ayúdanos a construir la vibra perfecta.
               </p>
               
-              <div className="bg-brand-paper rounded-3xl p-10 border border-brand-black/5 shadow-sm">
-                <h4 className="text-[10px] font-bold text-brand-black uppercase tracking-widest mb-6">Sugiérenos un track para la playlist</h4>
+              <div className="bg-white/5 rounded-3xl p-10 border border-white/10 shadow-sm">
+                <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-6">Sugiérenos un track para la playlist</h4>
                 <form onSubmit={handleSongSubmit} className="flex gap-3">
                   <input 
                     type="text" 
                     value={song}
                     onChange={(e) => setSong(e.target.value)}
                     placeholder="Link de Spotify o nombre de la canción" 
-                    className="flex-1 bg-white border-none rounded-2xl px-6 py-4 text-sm text-brand-black focus:ring-2 focus:ring-brand-primary transition-all outline-none"
+                    className="flex-1 bg-white/10 border border-white/10 rounded-2xl px-6 py-4 text-sm text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none placeholder:text-gray-500"
                     required
                   />
-                  <Button type="submit" className="w-14 h-14 rounded-2xl bg-brand-black text-white hover:bg-brand-primary transition-all flex items-center justify-center">
+                  <Button type="submit" className="w-14 h-14 rounded-2xl bg-brand-primary text-brand-black hover:bg-white transition-all flex items-center justify-center">
                     <Send className="w-4 h-4" />
                   </Button>
                 </form>
@@ -60,7 +60,7 @@ export function Community() {
             </div>
             
             <div className="relative group">
-              <div className="bg-brand-paper rounded-3xl overflow-hidden border border-brand-black/5 shadow-2xl relative">
+              <div className="bg-white/5 rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative">
                 <iframe 
                   data-testid="embed-iframe" 
                   style={{ borderRadius: '12px' }} 
@@ -80,13 +80,13 @@ export function Community() {
       </section>
 
       {/* Social Feeds & Memes - High End Gallery */}
-      <section className="py-32 bg-brand-paper">
+      <section className="py-32 bg-brand-black">
         <div className="container mx-auto px-6">
           <div className="text-center mb-24">
-            <h2 className="text-5xl font-heading font-black text-brand-black uppercase tracking-tighter mb-6">
+            <h2 className="text-5xl font-heading font-black text-white uppercase tracking-tighter mb-6">
               Cultura Digital
             </h2>
-            <p className="serif text-xl text-gray-500 italic">Lo mejor de nuestra comunidad en redes.</p>
+            <p className="serif text-xl text-gray-400 italic">Lo mejor de nuestra comunidad en redes.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
@@ -94,19 +94,19 @@ export function Community() {
               <motion.div 
                 key={i}
                 whileHover={{ y: -10 }}
-                className="bg-white rounded-3xl overflow-hidden group shadow-sm hover:shadow-2xl transition-all duration-500 border border-brand-black/5"
+                className="bg-white/5 rounded-3xl overflow-hidden group shadow-sm hover:shadow-2xl transition-all duration-500 border border-white/10 hover:border-brand-primary"
               >
-                <div className="p-6 flex items-center gap-4 border-b border-brand-black/5">
-                  <div className="w-10 h-10 rounded-full bg-brand-paper flex items-center justify-center border border-brand-black/5">
-                    <span className="text-brand-black font-heading font-black text-[10px] italic">F&C</span>
+                <div className="p-6 flex items-center gap-4 border-b border-white/10">
+                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/10">
+                    <span className="text-white font-heading font-black text-[10px] italic">F&C</span>
                   </div>
                   <div>
-                    <h4 className="text-[10px] font-bold text-brand-black uppercase tracking-widest">flyandchill</h4>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-widest">@flyandchill_us</p>
+                    <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">flyandchill</h4>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">@flyandchill_us</p>
                   </div>
-                  <Instagram className="w-4 h-4 text-gray-300 ml-auto" />
+                  <Instagram className="w-4 h-4 text-gray-500 ml-auto" />
                 </div>
-                <div className="aspect-square bg-brand-paper relative overflow-hidden">
+                <div className="aspect-square bg-white/5 relative overflow-hidden">
                   <img 
                     src={`https://picsum.photos/seed/meme${i}/800/800`} 
                     alt="Community Post" 
@@ -115,7 +115,7 @@ export function Community() {
                   />
                 </div>
                 <div className="p-8">
-                  <p className="serif text-lg text-gray-600 italic leading-relaxed">
+                  <p className="serif text-lg text-gray-400 italic leading-relaxed">
                     {i % 2 === 0 ? "Cuando el Kush pega justo a tiempo 🪰💨 #FlyAndChill #CannabisCulture" : "Viernes de Sativa y creatividad. ¿Qué están armando hoy? 🎨✨"}
                   </p>
                 </div>

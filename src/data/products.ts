@@ -2,6 +2,18 @@ import { Product } from "@/types";
 
 export const products: Product[] = [
   {
+    id: "disp-berry-runtz",
+    name: "Berry Runtz Disposable",
+    category: "Desechables",
+    flavors: ["Berry Runtz"],
+    price: 49.99,
+    images: ["/produc.png"],
+    description: "Vape desechable premium con el legendario sabor Berry Runtz. 97% CBD puro, destilado refinado y materia prima orgánica. Efecto rápido y sabor dulce inigualable.",
+    stock: 15,
+    rating: 5.0,
+    cbdContent: "97%"
+  },
+  {
     id: "disp-cinnamon",
     name: "Cinnamon Bun Disposable",
     category: "Desechables",

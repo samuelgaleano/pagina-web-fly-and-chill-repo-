@@ -34,6 +34,7 @@ export function Navbar() {
 
   const rightLinks = [
     { name: "Contacto", path: "/contact" },
+    { name: "us", path: "/about" },
   ];
 
   return (
@@ -99,7 +100,9 @@ export function Navbar() {
                 <Link
                   key={link.name}
                   to={link.path}
-                  className={`font-heading font-black uppercase tracking-[0.2em] text-[10px] transition-all hover:text-brand-primary ${
+                  className={`font-heading font-black tracking-[0.2em] transition-all hover:text-brand-primary ${
+                    link.name === "us" ? "lowercase text-[9px]" : "uppercase text-[10px]"
+                  } ${
                     location.pathname === link.path ? "text-brand-primary" : "text-white"
                   }`}
                 >
@@ -167,7 +170,9 @@ export function Navbar() {
                 <Link
                   key={link.name}
                   to={link.path}
-                  className={`font-heading font-black text-3xl uppercase tracking-widest ${
+                  className={`font-heading font-black text-3xl tracking-widest ${
+                    link.name === "us" ? "lowercase" : "uppercase"
+                  } ${
                     location.pathname === link.path ? "text-brand-amber" : "text-white"
                   }`}
                 >
@@ -183,7 +188,7 @@ export function Navbar() {
                     </span>
                   )}
                 </Link>
-                <a href="https://wa.me/1234567890" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-brand-green/20 flex items-center justify-center text-brand-green">
+                <a href="https://wa.me/573019202618" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-brand-green/20 flex items-center justify-center text-brand-green">
                   <MessageCircle className="w-5 h-5" />
                 </a>
               </div>

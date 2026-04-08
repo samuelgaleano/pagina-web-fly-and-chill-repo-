@@ -20,7 +20,7 @@ export function Contact() {
   };
 
   return (
-    <div className="bg-brand-paper min-h-screen pt-20">
+    <div className="bg-brand-black min-h-screen pt-20">
       {/* Hero - Editorial Style */}
       <section className="relative py-40 overflow-hidden">
         <div className="container mx-auto px-6 text-center">
@@ -31,43 +31,43 @@ export function Contact() {
             </span>
             <span className="w-8 h-[1px] bg-brand-primary"></span>
           </div>
-          <h1 className="serif text-7xl md:text-9xl font-light italic leading-none mb-10 text-brand-black">
+          <h1 className="serif text-7xl md:text-9xl font-light italic leading-none mb-10 text-white">
             Soporte & <br /> <span className="font-bold not-italic">Contacto</span>
           </h1>
-          <p className="serif text-2xl text-gray-500 italic leading-relaxed max-w-2xl mx-auto">
+          <p className="serif text-2xl text-gray-400 italic leading-relaxed max-w-2xl mx-auto">
             "Estamos aquí para asegurar que tu experiencia sea tan pura como nuestros destilados."
           </p>
         </div>
       </section>
 
-      <section className="py-32 bg-white">
+      <section className="py-32 bg-brand-black">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-24">
             {/* Contact Form */}
             <div>
-              <h2 className="text-4xl font-heading font-black text-brand-black uppercase tracking-tighter mb-12">
+              <h2 className="text-4xl font-heading font-black text-white uppercase tracking-tighter mb-12">
                 Envíanos un mensaje
               </h2>
               <form onSubmit={handleContactSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-3">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Nombre</label>
-                    <input required type="text" className="w-full bg-brand-paper border-none rounded-2xl px-6 py-4 text-brand-black focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Nombre</label>
+                    <input required type="text" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
                   </div>
                   <div className="space-y-3">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Email</label>
-                    <input required type="email" className="w-full bg-brand-paper border-none rounded-2xl px-6 py-4 text-brand-black focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Email</label>
+                    <input required type="email" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Asunto</label>
-                  <input required type="text" className="w-full bg-brand-paper border-none rounded-2xl px-6 py-4 text-brand-black focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Asunto</label>
+                  <input required type="text" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Mensaje</label>
-                  <textarea required rows={5} className="w-full bg-brand-paper border-none rounded-2xl px-6 py-4 text-brand-black focus:ring-2 focus:ring-brand-primary transition-all outline-none resize-none"></textarea>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Mensaje</label>
+                  <textarea required rows={5} className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none resize-none"></textarea>
                 </div>
-                <Button type="submit" size="lg" className="w-full h-16 text-xs font-black uppercase tracking-widest bg-brand-black text-white hover:bg-brand-primary rounded-full transition-all shadow-xl shadow-brand-black/10">
+                <Button type="submit" size="lg" className="w-full h-16 text-xs font-black uppercase tracking-widest bg-brand-primary text-brand-black hover:bg-white rounded-full transition-all shadow-xl shadow-brand-primary/20">
                   Enviar Mensaje <ArrowRight className="w-4 h-4 ml-3" />
                 </Button>
               </form>
@@ -76,7 +76,7 @@ export function Contact() {
             {/* Info & Tracking */}
             <div className="space-y-16">
               {/* Tracking */}
-              <div className="bg-brand-paper rounded-3xl p-10 border border-brand-black/5">
+              <div className="bg-white/5 rounded-3xl p-10 border border-white/10">
                 <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-primary mb-8 flex items-center gap-3">
                   <Search className="w-4 h-4" /> Rastrear Pedido
                 </h3>
@@ -87,10 +87,10 @@ export function Contact() {
                       value={orderId}
                       onChange={(e) => setOrderId(e.target.value)}
                       placeholder="Número de pedido (ej. FC-12345)" 
-                      className="flex-1 bg-white border-none rounded-2xl px-6 py-4 text-brand-black focus:ring-2 focus:ring-brand-primary transition-all outline-none text-sm"
+                      className="flex-1 bg-white/10 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none text-sm placeholder:text-gray-500"
                       required
                     />
-                    <Button type="submit" className="h-14 rounded-2xl px-8 bg-brand-black text-white hover:bg-brand-primary transition-all text-xs font-bold uppercase tracking-widest">
+                    <Button type="submit" className="h-14 rounded-2xl px-8 bg-brand-primary text-brand-black hover:bg-white transition-all text-xs font-bold uppercase tracking-widest">
                       Rastrear
                     </Button>
                   </div>
@@ -99,7 +99,7 @@ export function Contact() {
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-8 p-6 bg-white border border-brand-green/20 rounded-2xl text-brand-green serif text-lg italic"
+                    className="mt-8 p-6 bg-brand-primary/10 border border-brand-primary/20 rounded-2xl text-brand-primary serif text-lg italic"
                   >
                     {trackingStatus}
                   </motion.div>
@@ -108,20 +108,20 @@ export function Contact() {
 
               {/* Contact Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                <div className="bg-brand-paper rounded-3xl p-10 border border-brand-black/5 text-center group hover:border-brand-primary transition-colors">
-                  <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-brand-primary mx-auto mb-6 shadow-sm">
+                <a href="mailto:flyandchill0@gmail.com" className="bg-white/5 rounded-3xl p-10 border border-white/10 text-center group hover:border-brand-primary transition-colors">
+                  <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-brand-primary mx-auto mb-6 shadow-sm group-hover:bg-brand-primary group-hover:text-brand-black transition-all">
                     <Mail className="w-6 h-6" />
                   </div>
-                  <h4 className="text-[10px] font-bold text-brand-black uppercase tracking-widest mb-3">Email</h4>
-                  <p className="serif text-lg text-gray-500 italic">hello@flyandchill.com</p>
-                </div>
-                <div className="bg-brand-paper rounded-3xl p-10 border border-brand-black/5 text-center group hover:border-brand-primary transition-colors">
-                  <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-brand-green mx-auto mb-6 shadow-sm">
+                  <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-3">Email</h4>
+                  <p className="serif text-lg text-gray-400 italic">flyandchill0@gmail.com</p>
+                </a>
+                <a href="https://wa.me/573019202618" target="_blank" rel="noopener noreferrer" className="bg-white/5 rounded-3xl p-10 border border-white/10 text-center group hover:border-brand-primary transition-colors">
+                  <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-brand-primary mx-auto mb-6 shadow-sm group-hover:bg-brand-primary group-hover:text-brand-black transition-all">
                     <MessageCircle className="w-6 h-6" />
                   </div>
-                  <h4 className="text-[10px] font-bold text-brand-black uppercase tracking-widest mb-3">WhatsApp</h4>
-                  <p className="serif text-lg text-gray-500 italic">+1 (555) 123-4567</p>
-                </div>
+                  <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-3">WhatsApp</h4>
+                  <p className="serif text-lg text-gray-400 italic">+57 3019202618</p>
+                </a>
               </div>
             </div>
           </div>

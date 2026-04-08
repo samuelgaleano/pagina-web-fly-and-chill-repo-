@@ -6,6 +6,7 @@ import { collection, doc, deleteDoc, addDoc, updateDoc, setDoc } from "firebase/
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Plus, Edit2, Trash2, X, Save, Package, Image as ImageIcon, Tag, Beaker, DollarSign, FileText, Upload, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { formatPrice } from "@/lib/formatters";
 import { Product } from "@/types";
 
 export function Admin() {
@@ -284,7 +285,7 @@ export function Admin() {
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1 text-brand-primary font-bold text-sm">
                         <DollarSign className="w-3 h-3" />
-                        {product.price.toFixed(2)}
+                        {formatPrice(product.price)}
                       </div>
                       {product.isFeatured && (
                         <span className="bg-brand-primary/20 text-brand-primary text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-full border border-brand-primary/30">
@@ -460,7 +461,7 @@ export function Admin() {
                       {/* Price */}
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 flex items-center gap-2">
-                          <DollarSign className="w-3 h-3" /> Precio (USD)
+                          <DollarSign className="w-3 h-3" /> Precio
                         </label>
                         <input 
                           required

@@ -1,17 +1,19 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { Link, useSearchParams } from "react-router-dom";
+import { motion } from "motion/react";
 import { useShop } from "@/context/ShopContext";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
-import { Search, ShoppingCart, Filter, X, ChevronRight, Database, WifiOff } from "lucide-react";
+import { Search, Filter, X, ChevronRight, Database, WifiOff, ArrowRight, ChevronDown } from "lucide-react";
+import { formatPrice } from "@/lib/formatters";
 import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
-import { collection, doc, setDoc, writeBatch } from "firebase/firestore";
+import { collection, doc, writeBatch } from "firebase/firestore";
 import { products as initialProducts } from "@/data/products";
 
 export function Shop() {
   const { products, loading, isAdmin, isOffline } = useShop();
   const { addToCart } = useCart();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const categories = useMemo(() => Array.from(new Set(products.map(p => p.category))), [products]);
   const flavors = useMemo(() => Array.from(new Set(products.flatMap(p => p.flavors))), [products]);
@@ -20,9 +22,18 @@ export function Shop() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
+  const [isFlavorsOpen, setIsFlavorsOpen] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+
+  // Handle URL search params for initial category filtering
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    if (categoryParam && categories.includes(categoryParam)) {
+      setSelectedCategories([categoryParam]);
+    }
+  }, [searchParams, categories]);
 
   // Update priceRange when maxPrice changes
   useEffect(() => {
@@ -134,29 +145,45 @@ export function Shop() {
 
               {/* Flavors Section */}
               <div>
-                <h3 className="text-brand-primary font-heading font-black uppercase tracking-[0.2em] text-xs mb-6 border-b border-brand-primary/20 pb-3">
+                <button 
+                  onClick={() => setIsFlavorsOpen(!isFlavorsOpen)}
+                  className="w-full flex items-center justify-between text-brand-primary font-heading font-black uppercase tracking-[0.2em] text-xs mb-6 border-b border-brand-primary/20 pb-3 group"
+                >
                   Sabores
-                </h3>
-                <ul className="space-y-4">
-                  {flavors.map(flavor => (
-                    <li key={flavor}>
-                      <label className="flex items-center space-x-3 cursor-pointer group">
-                        <div className="relative flex items-center">
-                          <input 
-                            type="checkbox"
-                            checked={selectedFlavors.includes(flavor)}
-                            onChange={() => handleFlavorChange(flavor)}
-                            className="peer appearance-none w-5 h-5 border-2 border-white/20 rounded bg-transparent checked:bg-brand-primary checked:border-brand-primary transition-all cursor-pointer"
-                          />
-                          <X className="absolute w-3 h-3 text-brand-black opacity-0 peer-checked:opacity-100 left-1 transition-opacity pointer-events-none" />
-                        </div>
-                        <span className="text-sm text-gray-400 group-hover:text-white transition-colors uppercase tracking-widest font-bold">
-                          {flavor}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isFlavorsOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                <motion.div
+                  initial={false}
+                  animate={{ 
+                    height: isFlavorsOpen ? 'auto' : 0,
+                    opacity: isFlavorsOpen ? 1 : 0,
+                    marginBottom: isFlavorsOpen ? 24 : 0
+                  }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <ul className="space-y-4">
+                    {flavors.map(flavor => (
+                      <li key={flavor}>
+                        <label className="flex items-center space-x-3 cursor-pointer group">
+                          <div className="relative flex items-center">
+                            <input 
+                              type="checkbox"
+                              checked={selectedFlavors.includes(flavor)}
+                              onChange={() => handleFlavorChange(flavor)}
+                              className="peer appearance-none w-5 h-5 border-2 border-white/20 rounded bg-transparent checked:bg-brand-primary checked:border-brand-primary transition-all cursor-pointer"
+                            />
+                            <X className="absolute w-3 h-3 text-brand-black opacity-0 peer-checked:opacity-100 left-1 transition-opacity pointer-events-none" />
+                          </div>
+                          <span className="text-sm text-gray-400 group-hover:text-white transition-colors uppercase tracking-widest font-bold">
+                            {flavor}
+                          </span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
               </div>
 
               {/* Price Filter */}
@@ -268,63 +295,72 @@ export function Shop() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className="group bg-white/5 border border-white/10 rounded-[2.5rem] overflow-hidden hover:shadow-[0_0_50px_rgba(118,187,202,0.15)] transition-all duration-500 flex flex-col h-full"
+                    className="group relative bg-brand-dark/40 border border-white/5 rounded-[2rem] p-5 hover:border-brand-primary/40 transition-all duration-500 hover:shadow-[0_0_50px_rgba(118,187,202,0.15)] flex flex-col h-full"
                   >
                     {/* Image Area */}
-                    <div className="relative h-72 overflow-hidden bg-gradient-to-br from-brand-black to-brand-gray/40 p-8 flex items-center justify-center">
-                      <div className="absolute top-6 left-6 bg-brand-primary text-brand-black px-4 py-1.5 text-[9px] font-black rounded-full uppercase tracking-widest z-10 shadow-lg shadow-brand-primary/20">
-                        {product.cbdContent} Pureza
+                    <div className="relative aspect-square overflow-hidden rounded-2xl bg-brand-black/60 mb-6 group-hover:bg-brand-black/40 transition-colors flex items-center justify-center">
+                      <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+                        <span className="bg-brand-primary text-brand-black text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg backdrop-blur-md">
+                          {product.cbdContent}
+                        </span>
+                        {product.stock < 10 && product.stock > 0 && (
+                          <span className="bg-brand-secondary text-white text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg animate-pulse">
+                            ÚLTIMAS UNIDADES
+                          </span>
+                        )}
                       </div>
+                      
                       <Link to={`/shop/${product.id}`} className="w-full h-full flex items-center justify-center">
                         <img 
                           src={product.images[0]} 
                           alt={product.name} 
-                          className="object-contain h-full w-full group-hover:scale-110 transition-transform duration-700"
+                          className="object-contain h-full w-full p-8 group-hover:scale-110 transition-transform duration-700"
                           referrerPolicy="no-referrer"
                         />
                       </Link>
+
+                      {/* Quick Action Overlay */}
+                      <div className="absolute inset-0 bg-brand-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                        <Button 
+                          className="bg-brand-primary text-brand-black hover:bg-white rounded-full font-black uppercase tracking-widest px-10 py-7 shadow-[0_0_30px_rgba(118,187,202,0.5)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500"
+                          disabled={product.stock === 0}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            addToCart(product);
+                          }}
+                        >
+                          {product.stock > 0 ? "Añadir al Carrito" : "Agotado"}
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Content Area */}
-                    <div className="p-8 flex flex-col flex-grow">
-                      <div className="flex justify-between items-start mb-4">
-                        <Link to={`/shop/${product.id}`}>
-                          <h3 className="text-xl font-heading font-black uppercase tracking-tighter group-hover:text-brand-primary transition-colors leading-tight">
-                            {product.name}
-                          </h3>
-                        </Link>
-                        <span className={`text-[9px] font-black uppercase tracking-widest flex items-center shrink-0 ml-4 ${product.stock > 0 ? "text-brand-primary" : "text-brand-secondary"}`}>
-                          <span className={`w-2 h-2 rounded-full mr-2 ${product.stock > 0 ? "bg-brand-primary animate-pulse" : "bg-brand-secondary"}`}></span>
-                          {product.stock > 0 ? "En Stock" : "Agotado"}
-                        </span>
+                    <div className="flex flex-col flex-grow px-2">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-[10px] font-black text-brand-primary/80 uppercase tracking-[0.25em]">{product.category}</span>
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 rounded-full border border-white/5">
+                          <span className="text-[10px] font-bold text-brand-secondary">{product.rating}</span>
+                          <div className="w-1.5 h-1.5 rounded-full bg-brand-secondary shadow-[0_0_8px_rgba(255,0,0,0.5)]" />
+                        </div>
                       </div>
                       
-                      <p className="text-xs text-gray-400 mb-6 line-clamp-2 font-sans leading-relaxed">
-                        {product.description}
-                      </p>
-
-                      <div className="mt-auto">
-                        <div className="text-3xl font-heading font-black text-brand-primary mb-8">
-                          ${product.price.toFixed(2)} <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold ml-1">USD</span>
+                      <Link to={`/shop/${product.id}`} className="mb-4">
+                        <h3 className="text-2xl font-heading font-black uppercase tracking-tight group-hover:text-brand-primary transition-colors leading-tight line-clamp-2">
+                          {product.name}
+                        </h3>
+                      </Link>
+                      
+                      <div className="mt-auto flex justify-between items-center pt-4 border-t border-white/5">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Precio</span>
+                          <span className="text-2xl font-sans font-black text-white">${formatPrice(product.price)}</span>
                         </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <Button 
-                            className="bg-brand-primary text-brand-black hover:bg-white text-[10px] font-black py-4 rounded-2xl transition-all duration-300 uppercase tracking-widest"
-                            disabled={product.stock === 0}
-                            onClick={() => addToCart(product)}
-                          >
-                            Añadir
-                          </Button>
-                          <Link to={`/shop/${product.id}`} className="w-full">
-                            <Button 
-                              variant="outline"
-                              className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white text-[10px] font-black py-4 rounded-2xl transition-all duration-300 uppercase tracking-widest"
-                            >
-                              Detalles
-                            </Button>
-                          </Link>
-                        </div>
+                        <Link 
+                          to={`/shop/${product.id}`}
+                          className="w-12 h-12 rounded-2xl border border-white/10 flex items-center justify-center hover:bg-brand-primary hover:border-brand-primary hover:text-brand-black transition-all group/btn shadow-lg"
+                        >
+                          <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform" />
+                        </Link>
                       </div>
                     </div>
                   </motion.article>

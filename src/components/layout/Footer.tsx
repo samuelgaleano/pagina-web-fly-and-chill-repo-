@@ -80,19 +80,23 @@ export function Footer() {
                 <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-brand-primary transition-colors duration-500">
                   <MapPin className="w-4 h-4 text-white group-hover:text-brand-black" />
                 </div>
-                <span className="serif text-lg italic">Los Angeles, California, USA</span>
+                <span className="serif text-lg italic">Bogotá, Colombia</span>
               </li>
               <li className="flex items-center gap-5 text-gray-400 group">
-                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-brand-primary transition-colors duration-500">
-                  <Phone className="w-4 h-4 text-white group-hover:text-brand-black" />
-                </div>
-                <span className="serif text-lg italic">+1 (555) 123-4567</span>
+                <a href="tel:+573019202618" className="flex items-center gap-5 hover:text-white transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-brand-primary transition-colors duration-500">
+                    <Phone className="w-4 h-4 text-white group-hover:text-brand-black" />
+                  </div>
+                  <span className="serif text-lg italic">+57 3019202618</span>
+                </a>
               </li>
               <li className="flex items-center gap-5 text-gray-400 group">
-                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-brand-primary transition-colors duration-500">
-                  <Mail className="w-4 h-4 text-white group-hover:text-brand-black" />
-                </div>
-                <span className="serif text-lg italic">hello@flyandchill.com</span>
+                <a href="mailto:flyandchill0@gmail.com" className="flex items-center gap-5 hover:text-white transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-brand-primary transition-colors duration-500">
+                    <Mail className="w-4 h-4 text-white group-hover:text-brand-black" />
+                  </div>
+                  <span className="serif text-lg italic">flyandchill0@gmail.com</span>
+                </a>
               </li>
             </ul>
           </div>

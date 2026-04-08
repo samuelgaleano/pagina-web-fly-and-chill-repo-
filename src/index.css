@@ -18,6 +18,12 @@
   --animate-pulse-slow: pulse-slow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-fly: fly-around 15s infinite linear;
   --animate-float: float 4s ease-in-out infinite;
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+
+  @keyframes glow {
+    from { box-shadow: 0 0 10px rgba(255, 77, 77, 0.5), 0 0 20px rgba(255, 77, 77, 0.3); }
+    to { box-shadow: 0 0 20px rgba(255, 77, 77, 0.8), 0 0 40px rgba(255, 77, 77, 0.5); }
+  }
 
   @keyframes float {
     0%, 100% { transform: translateY(0); }
@@ -60,6 +66,14 @@
 
 @utility border-text-black {
   -webkit-text-stroke: 1px rgba(0, 0, 0, 0.1);
+}
+
+@utility bg-gradient-buy {
+  background: linear-gradient(90deg, #ff0000 0%, #ff8c00 100%);
+}
+
+@utility bg-gradient-assistant {
+  background: linear-gradient(90deg, #ff8c00 0%, #ffcc00 100%);
 }
 
 @utility liquid-btn {
