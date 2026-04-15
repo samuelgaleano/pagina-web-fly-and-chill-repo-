@@ -8,10 +8,10 @@ export const products: Product[] = [
     flavors: ["Berry Runtz"],
     price: 49.99,
     images: ["/produc.png"],
-    description: "Vape desechable premium con el legendario sabor Berry Runtz. 97% CBD puro, destilado refinado y materia prima orgánica. Efecto rápido y sabor dulce inigualable.",
+    description: "Vape desechable premium con el legendario sabor Berry Runtz. Destilado refinado y materia prima orgánica. Efecto rápido y sabor dulce inigualable.",
     stock: 15,
     rating: 5.0,
-    cbdContent: "97%"
+    cbdContent: "Premium"
   },
   {
     id: "disp-cinnamon",
@@ -20,10 +20,10 @@ export const products: Product[] = [
     flavors: ["Cinnamon Bun"],
     price: 45.00,
     images: ["https://images.unsplash.com/photo-1620331713240-ed6041047c44?q=80&w=1000&auto=format&fit=crop"],
-    description: "Vape desechable premium con sabor a Cinnamon Bun. 97% CBD puro, destilado refinado y materia prima orgánica. Efecto rápido y sabor limpio.",
+    description: "Vape desechable premium con sabor a Cinnamon Bun. Destilado refinado y materia prima orgánica. Efecto rápido y sabor limpio.",
     stock: 50,
     rating: 4.8,
-    cbdContent: "97%"
+    cbdContent: "Premium"
   },
   {
     id: "disp-kush",
@@ -35,7 +35,7 @@ export const products: Product[] = [
     description: "El clásico sabor Kush en un formato desechable conveniente. Perfil híbrido perfecto para relajación y creatividad.",
     stock: 20,
     rating: 4.9,
-    cbdContent: "97%"
+    cbdContent: "Premium"
   },
   {
     id: "cart-sativa",
@@ -47,7 +47,7 @@ export const products: Product[] = [
     description: "Cartucho recargable con perfil Sativa. Ideal para mantener la energía y el enfoque durante el día. Aceite ámbar brillante visible.",
     stock: 100,
     rating: 4.7,
-    cbdContent: "97%"
+    cbdContent: "Premium"
   },
   {
     id: "cart-kush",
@@ -56,10 +56,10 @@ export const products: Product[] = [
     flavors: ["Kush"],
     price: 35.00,
     images: ["https://images.unsplash.com/photo-1603909223429-69bb7101f420?q=80&w=1000&auto=format&fit=crop"],
-    description: "Cartucho recargable Kush para esas noches de chill. Potencia consistente y sabor inigualable.",
+    description: "Cartucho recargable Kush para esas noches de chill. Calidad consistente y sabor inigualable.",
     stock: 5,
     rating: 4.6,
-    cbdContent: "97%"
+    cbdContent: "Premium"
   },
   {
     id: "spec-gold",
@@ -71,7 +71,7 @@ export const products: Product[] = [
     description: "Edición limitada con el destilado más puro. Packaging premium negro con acentos dorados. Una experiencia de consumo superior.",
     stock: 10,
     rating: 5.0,
-    cbdContent: "99%"
+    cbdContent: "Elite"
   },
   {
     id: "spec-chill",
@@ -83,7 +83,7 @@ export const products: Product[] = [
     description: "Una colaboración especial con artistas de la comunidad. Diseño urbano exclusivo y sabor intenso.",
     stock: 15,
     rating: 4.9,
-    cbdContent: "97%"
+    cbdContent: "Premium"
   },
   {
     id: "bat-pro",

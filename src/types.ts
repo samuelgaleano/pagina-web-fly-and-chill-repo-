@@ -15,3 +15,27 @@ export interface Product {
 export interface CartItem extends Product {
   quantity: number;
 }
+
+export interface PromoCode {
+  id: string;
+  code: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  isActive: boolean;
+  usageCount: number;
+}
+
+export interface Order {
+  id: string;
+  userId: string;
+  items: {
+    productId: string;
+    name: string;
+    quantity: number;
+    price: number;
+  }[];
+  total: number;
+  discountAmount?: number;
+  promoCode?: string;
+  createdAt: any; // Firestore Timestamp
+}

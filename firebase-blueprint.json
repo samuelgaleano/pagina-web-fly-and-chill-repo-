@@ -16,7 +16,7 @@
           "items": { "type": "string" },
           "description": "List of URLs to the product images." 
         },
-        "cbdContent": { "type": "string", "description": "The CBD percentage or content." }
+        "cbdContent": { "type": "string", "description": "The product quality or tier (e.g., Premium, Elite)." }
       },
       "required": ["name", "price", "category", "stock"]
     },
@@ -38,9 +38,24 @@
           }
         },
         "total": { "type": "number" },
+        "discountAmount": { "type": "number", "description": "The amount discounted from the total." },
+        "promoCode": { "type": "string", "description": "The promo code used for this order." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "items", "total", "createdAt"]
+    },
+    "PromoCode": {
+      "title": "PromoCode",
+      "description": "A promotional code for discounts.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string", "description": "The code string (e.g., FLY20)." },
+        "discountType": { "type": "string", "enum": ["percentage", "fixed"], "description": "The type of discount." },
+        "discountValue": { "type": "number", "description": "The value of the discount (e.g., 20 for 20% or $20)." },
+        "isActive": { "type": "boolean", "description": "Whether the code is currently active." },
+        "usageCount": { "type": "integer", "description": "How many times this code has been used." }
+      },
+      "required": ["code", "discountType", "discountValue", "isActive"]
     }
   },
   "firestore": {
@@ -51,6 +66,10 @@
     "/orders/{orderId}": {
       "schema": "Order",
       "description": "Collection of orders placed by users."
+    },
+    "/promoCodes/{codeId}": {
+      "schema": "PromoCode",
+      "description": "Collection of promotional codes."
     }
   }
 }

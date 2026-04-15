@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useShop } from "@/context/ShopContext";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
-import { Search, Filter, X, ChevronRight, Database, WifiOff, ArrowRight, ChevronDown } from "lucide-react";
+import { Search, Filter, X, ChevronRight, Database, WifiOff, ArrowRight, ChevronDown, Star } from "lucide-react";
 import { formatPrice } from "@/lib/formatters";
 import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
 import { collection, doc, writeBatch } from "firebase/firestore";
@@ -17,7 +17,10 @@ export function Shop() {
   
   const categories = useMemo(() => Array.from(new Set(products.map(p => p.category))), [products]);
   const flavors = useMemo(() => Array.from(new Set(products.flatMap(p => p.flavors))), [products]);
-  const maxPrice = useMemo(() => Math.ceil(Math.max(...products.map(p => p.price), 0)), [products]);
+  const maxPrice = useMemo(() => {
+    const prices = products.map(p => Number(p.price)).filter(p => !isNaN(p));
+    return prices.length > 0 ? Math.ceil(Math.max(...prices)) : 1000;
+  }, [products]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -196,8 +199,8 @@ export function Shop() {
                   <div 
                     className="absolute h-1 bg-brand-primary rounded-lg"
                     style={{
-                      left: `calc(8px + ${(priceRange.min / maxPrice) * 100}% * (100% - 16px) / 100)`,
-                      right: `calc(8px + ${100 - (priceRange.max / maxPrice) * 100}% * (100% - 16px) / 100)`
+                      left: `calc(8px + ${(maxPrice > 0 ? priceRange.min / maxPrice : 0) * 100}% * (100% - 16px) / 100)`,
+                      right: `calc(8px + ${100 - (maxPrice > 0 ? priceRange.max / maxPrice : 100) * 100}% * (100% - 16px) / 100)`
                     }}
                   ></div>
                   <input 
@@ -299,18 +302,7 @@ export function Shop() {
                   >
                     {/* Image Area */}
                     <div className="relative aspect-square overflow-hidden rounded-2xl bg-brand-black/60 mb-6 group-hover:bg-brand-black/40 transition-colors flex items-center justify-center">
-                      <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-                        <span className="bg-brand-primary text-brand-black text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg backdrop-blur-md">
-                          {product.cbdContent}
-                        </span>
-                        {product.stock < 10 && product.stock > 0 && (
-                          <span className="bg-brand-secondary text-white text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg animate-pulse">
-                            ÚLTIMAS UNIDADES
-                          </span>
-                        )}
-                      </div>
-                      
-                      <Link to={`/shop/${product.id}`} className="w-full h-full flex items-center justify-center">
+                      <Link to={`/shop/${product.id}`} className="absolute inset-0 z-0 flex items-center justify-center">
                         <img 
                           src={product.images[0]} 
                           alt={product.name} 
@@ -319,13 +311,23 @@ export function Shop() {
                         />
                       </Link>
 
+                      <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 pointer-events-none">
+                        {product.stock < 10 && product.stock > 0 && (
+                          <span className="bg-brand-secondary text-white text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg animate-pulse">
+                            ÚLTIMAS UNIDADES
+                          </span>
+                        )}
+                      </div>
+                      
                       {/* Quick Action Overlay */}
-                      <div className="absolute inset-0 bg-brand-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                      <div className="absolute inset-0 bg-brand-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px] z-20">
+                        <Link to={`/shop/${product.id}`} className="absolute inset-0 z-0" />
                         <Button 
-                          className="bg-brand-primary text-brand-black hover:bg-white rounded-full font-black uppercase tracking-widest px-10 py-7 shadow-[0_0_30px_rgba(118,187,202,0.5)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500"
+                          className="relative z-10 bg-brand-primary text-brand-black hover:bg-white rounded-full font-black uppercase tracking-widest px-10 py-7 shadow-[0_0_30px_rgba(118,187,202,0.5)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500"
                           disabled={product.stock === 0}
                           onClick={(e) => {
                             e.preventDefault();
+                            e.stopPropagation();
                             addToCart(product);
                           }}
                         >
@@ -337,27 +339,27 @@ export function Shop() {
                     {/* Content Area */}
                     <div className="flex flex-col flex-grow px-2">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="text-[10px] font-black text-brand-primary/80 uppercase tracking-[0.25em]">{product.category}</span>
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 rounded-full border border-white/5">
-                          <span className="text-[10px] font-bold text-brand-secondary">{product.rating}</span>
-                          <div className="w-1.5 h-1.5 rounded-full bg-brand-secondary shadow-[0_0_8px_rgba(255,0,0,0.5)]" />
+                        <span className="text-[9px] font-black text-brand-primary/60 uppercase tracking-[0.3em]">{product.category}</span>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 rounded-full border border-white/10">
+                          <span className="text-[9px] font-black text-brand-secondary">{product.rating}</span>
+                          <Star className="w-2.5 h-2.5 fill-brand-secondary text-brand-secondary" />
                         </div>
                       </div>
                       
-                      <Link to={`/shop/${product.id}`} className="mb-4">
-                        <h3 className="text-2xl font-heading font-black uppercase tracking-tight group-hover:text-brand-primary transition-colors leading-tight line-clamp-2">
+                      <Link to={`/shop/${product.id}`} className="mb-6 block group/title">
+                        <h3 className="text-2xl font-heading font-black uppercase tracking-tight group-hover/title:text-brand-primary transition-colors leading-tight line-clamp-2">
                           {product.name}
                         </h3>
                       </Link>
                       
-                      <div className="mt-auto flex justify-between items-center pt-4 border-t border-white/5">
+                      <div className="mt-auto flex justify-between items-center pt-6 border-t border-white/5">
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Precio</span>
-                          <span className="text-2xl font-sans font-black text-white">${formatPrice(product.price)}</span>
+                          <span className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Precio Elite</span>
+                          <span className="text-2xl font-sans font-black text-white tracking-tight">${formatPrice(product.price)}</span>
                         </div>
                         <Link 
                           to={`/shop/${product.id}`}
-                          className="w-12 h-12 rounded-2xl border border-white/10 flex items-center justify-center hover:bg-brand-primary hover:border-brand-primary hover:text-brand-black transition-all group/btn shadow-lg"
+                          className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-brand-primary hover:border-brand-primary hover:text-brand-black transition-all group/btn shadow-xl active:scale-90"
                         >
                           <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform" />
                         </Link>

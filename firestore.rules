@@ -27,7 +27,18 @@ service cloud.firestore {
     //   - userId: string (required, matches auth.uid)
     //   - items: list (required, max 50 items)
     //   - total: number (required, > 0)
+    //   - discountAmount: number (optional)
+    //   - promoCode: string (optional)
     //   - createdAt: timestamp (required)
+    //
+    // Collection: promoCodes
+    // Document ID: codeId
+    // Fields:
+    //   - code: string (required, uppercase)
+    //   - discountType: string (required, percentage|fixed)
+    //   - discountValue: number (required, > 0)
+    //   - isActive: bool (required)
+    //   - usageCount: number (required, >= 0)
     //
     // ===============================================================
 
@@ -45,7 +56,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
           (request.auth.token.email == "samuel.galeano.alvis@gmail.com" && request.auth.token.email_verified == true));
     }
 
@@ -63,6 +74,11 @@ service cloud.firestore {
 
     function hasRequiredFields(fields) {
       return request.resource.data.keys().hasAll(fields);
+    }
+
+    function usageCountOnlyIncremented() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usageCount']) &&
+             request.resource.data.usageCount == resource.data.usageCount + 1;
     }
 
     // ===============================================================
@@ -84,12 +100,25 @@ service cloud.firestore {
     }
 
     function isValidOrder(data) {
-      return hasRequiredFields(['userId', 'items', 'total', 'createdAt']) &&
-             hasOnlyAllowedFields(['userId', 'items', 'total', 'createdAt']) &&
+      return hasRequiredFields(['userId', 'items', 'total', 'createdAt', 'shippingInfo']) &&
+             hasOnlyAllowedFields(['userId', 'items', 'total', 'createdAt', 'discountAmount', 'promoCode', 'shippingInfo', 'status']) &&
              data.userId == request.auth.uid &&
              data.items is list && data.items.size() > 0 && data.items.size() <= 50 &&
              data.total is number && data.total > 0 &&
-             data.createdAt is timestamp;
+             data.createdAt is timestamp &&
+             (!('discountAmount' in data) || data.discountAmount is number) &&
+             (!('promoCode' in data) || data.promoCode is string) &&
+             (!('status' in data) || data.status is string);
+    }
+
+    function isValidPromoCode(data) {
+      return hasRequiredFields(['code', 'discountType', 'discountValue', 'isActive', 'usageCount']) &&
+             hasOnlyAllowedFields(['code', 'discountType', 'discountValue', 'isActive', 'usageCount', 'id']) &&
+             data.code is string && data.code.size() > 0 &&
+             data.discountType in ['percentage', 'fixed'] &&
+             data.discountValue is number && data.discountValue > 0 &&
+             data.isActive is bool &&
+             data.usageCount is number && data.usageCount >= 0;
     }
 
     // ===============================================================
@@ -112,6 +141,13 @@ service cloud.firestore {
       allow read: if isOwner(resource.data.userId) || isAdmin();
       allow create: if isAuthenticated() && isValidOrder(request.resource.data);
       allow update, delete: if isAdmin();
+    }
+
+    match /promoCodes/{codeId} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isAdmin() && isValidPromoCode(request.resource.data);
+      allow update: if (isAdmin() && isValidPromoCode(request.resource.data)) || 
+                      (isAuthenticated() && usageCountOnlyIncremented());
     }
 
     match /users/{userId} {

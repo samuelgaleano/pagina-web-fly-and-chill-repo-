@@ -16,8 +16,8 @@ export function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-brand-black">
-      {/* Hero Section - Redesigned based on mockup */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      {/* Hero Section - Redesigned for better mobile responsiveness */}
+      <section className="relative min-h-[90vh] md:h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <img 
             src="/hero-bg-1.png" 
@@ -25,48 +25,51 @@ export function Home() {
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-black/60 md:bg-black/50" />
         </div>
         
-        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col md:flex-row items-center justify-between pt-20">
+        <div className="relative z-10 container mx-auto px-6 h-full flex flex-col md:flex-row items-center justify-center md:justify-between pt-32 pb-20 md:py-0">
           {/* Left Content */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="flex-1 text-left space-y-6"
+            className="flex-1 text-center md:text-left space-y-8 md:space-y-6 z-20"
           >
-            <h1 className="text-4xl md:text-6xl font-heading font-black text-white uppercase tracking-tighter leading-none">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-heading font-black text-white uppercase tracking-tighter leading-[0.85] md:leading-none">
               vuela y eleva <br /> tus <span className="text-brand-primary">Vibes</span>
             </h1>
             
-            <div className="space-y-4">
-              <p className="text-lg md:text-2xl text-white font-sans tracking-tight flex items-center whitespace-nowrap">
-                prueba nuestro <span className="text-brand-primary font-black uppercase mx-2">best seller</span> y <span className="text-white mx-2">ponte</span> 
-                <img 
-                  src="/chill.png" 
-                  alt="CHILL" 
-                  className="h-[70px] md:h-[100px] object-contain transform -rotate-3 hover:scale-110 transition-transform duration-300 ml-[-25px]"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    const span = document.createElement('span');
-                    span.className = "font-cursive text-3xl md:text-5xl text-brand-secondary uppercase ml-2 inline-block transform -rotate-3";
-                    span.innerText = "CHILL";
-                    e.currentTarget.parentNode?.appendChild(span);
-                  }}
-                />
+            <div className="flex flex-col items-center md:items-start space-y-4">
+              <p className="text-xl md:text-2xl text-white font-sans tracking-tight flex flex-wrap items-center justify-center md:justify-start gap-2">
+                prueba nuestro <span className="text-brand-primary font-black uppercase">best seller</span> 
+                <span className="flex items-center">
+                  y ponte
+                  <img 
+                    src="/chill.png" 
+                    alt="CHILL" 
+                    className="h-[60px] md:h-[100px] object-contain transform -rotate-3 hover:scale-110 transition-transform duration-300 -ml-2 md:-ml-6"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const span = document.createElement('span');
+                      span.className = "font-cursive text-4xl md:text-6xl text-brand-secondary uppercase ml-2 inline-block transform -rotate-3";
+                      span.innerText = "CHILL";
+                      e.currentTarget.parentNode?.appendChild(span);
+                    }}
+                  />
+                </span>
               </p>
             </div>
 
-            <div className="pt-4">
+            <div className="pt-6 md:pt-4">
               <Link to="/shop/disp-berry-runtz">
                 <Button 
                   size="lg" 
-                  className="h-16 px-8 text-lg md:text-xl font-black tracking-tight bg-gradient-buy text-white rounded-xl flex items-center gap-3 hover:scale-105 transition-all duration-300 shadow-[0_0_25px_rgba(255,0,0,0.3)] border-none animate-glow"
+                  className="w-full md:w-auto h-20 md:h-16 px-10 text-lg md:text-xl font-black tracking-tight bg-gradient-buy text-white rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(255,0,0,0.4)] border-none animate-glow"
                 >
                   <ShoppingCart className="w-6 h-6" />
-                  COMPRAR BERRY RUNTZ AHORA
+                  COMPRAR BERRY RUNTZ
                 </Button>
               </Link>
             </div>
@@ -74,43 +77,24 @@ export function Home() {
 
           {/* Right Content - Product Image */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, x: 50 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="flex-1 relative flex justify-center items-center -mt-20 translate-x-[25%]"
+            className="flex-1 relative flex justify-center items-center mt-12 md:mt-0 md:translate-x-[10%] lg:translate-x-[20%]"
           >
-            <div className="relative group">
+            <div className="relative group max-w-[300px] md:max-w-none">
               {/* Glow effect behind product */}
-              <div className="absolute inset-0 bg-brand-primary/20 blur-[100px] rounded-full animate-pulse" />
+              <div className="absolute inset-0 bg-brand-primary/30 blur-[80px] md:blur-[120px] rounded-full animate-pulse" />
               
               <img 
                 src="/produc.png" 
                 alt="Berry Runtz Disposable" 
-                className="relative z-10 w-full max-w-[2800px] h-auto object-contain animate-float drop-shadow-[0_0_50px_rgba(118,187,202,0.3)]"
+                className="relative z-10 w-full h-auto object-contain animate-float drop-shadow-[0_0_50px_rgba(118,187,202,0.4)]"
                 referrerPolicy="no-referrer"
               />
             </div>
           </motion.div>
 
-          {/* Assistant Button - Bottom Right */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="absolute bottom-10 right-10 z-30 translate-x-[20%] translate-y-[43%]"
-          >
-            <button 
-              onClick={() => window.dispatchEvent(new CustomEvent('open-ai-assistant'))}
-              className="group relative hover:scale-110 transition-all duration-300 drop-shadow-2xl"
-            >
-              <img 
-                src="/asistente.png" 
-                alt="Asistente" 
-                className="w-[17.28rem] h-[17.28rem] md:w-[21.6rem] md:h-[21.6rem] object-contain"
-                referrerPolicy="no-referrer"
-              />
-            </button>
-          </motion.div>
         </div>
 
         {/* Flying Fly - Keeping the previous request's feature */}
@@ -137,7 +121,7 @@ export function Home() {
                 <img 
                   src="/combos.png" 
                   alt="COMBOS" 
-                  className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700"
+                  className="w-full h-full object-contain opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
                     e.currentTarget.src = "https://picsum.photos/seed/combos/1200/800";
@@ -249,9 +233,6 @@ export function Home() {
                   
                   {/* Status Badge */}
                   <div className="absolute top-4 left-4 flex flex-col gap-2">
-                    <span className="bg-brand-primary text-brand-black text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg backdrop-blur-md">
-                      {product.cbdContent}
-                    </span>
                     {product.stock < 10 && product.stock > 0 && (
                       <span className="bg-brand-secondary text-white text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg animate-pulse">
                         ÚLTIMAS UNIDADES

@@ -81,7 +81,7 @@ export function Cart() {
                   </div>
                   
                   <p className="serif text-lg text-gray-400 italic mb-6">
-                    {item.flavors.join(" / ")} • {item.cbdContent} CBD
+                    {item.flavors.join(" / ")} • {item.cbdContent}
                   </p>
                   
                   <div className="flex items-center justify-between mt-auto">

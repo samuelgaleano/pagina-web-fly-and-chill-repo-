@@ -87,8 +87,8 @@ export function About() {
                 <div className="absolute top-0 right-0 p-8">
                   <Sparkles className="w-12 h-12 text-brand-primary/20 group-hover:text-brand-primary/50 transition-colors" />
                 </div>
-                <h2 className="text-8xl font-heading font-black text-white mb-4">97%</h2>
-                <h3 className="text-2xl font-heading font-black text-brand-primary uppercase tracking-widest mb-8">Concentración Pura</h3>
+                <h2 className="text-8xl font-heading font-black text-white mb-4">Pureza</h2>
+                <h3 className="text-2xl font-heading font-black text-brand-primary uppercase tracking-widest mb-8">Absoluta</h3>
                 <p className="serif text-xl text-gray-400 italic leading-relaxed">
                   Nuestra esencia es el resultado de una innovación radical. Eliminamos lo innecesario para concentrar la pureza en su estado más potente. Sin rellenos, sin compromisos. Solo la esencia.
                 </p>
@@ -170,7 +170,7 @@ export function About() {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { icon: Zap, title: "Potencia", desc: "Concentración máxima para resultados inmediatos." },
+              { icon: Zap, title: "Calidad", desc: "Pureza absoluta para resultados inmediatos." },
               { icon: Users, title: "Comunidad", desc: "Unidos por la cultura, el arte y la innovación." },
               { icon: ShieldCheck, title: "Confianza", desc: "Transparencia total en cada gota de esencia." }
             ].map((val, idx) => (

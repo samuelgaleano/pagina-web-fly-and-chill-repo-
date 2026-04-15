@@ -53,7 +53,7 @@ export function Navbar() {
               <Link
                 key={link.name}
                 to={link.path}
-                className={`font-heading font-black uppercase tracking-[0.2em] text-[10px] transition-all hover:text-brand-primary ${
+                className={`font-heading font-black uppercase tracking-[0.2em] text-[12px] transition-all hover:text-brand-primary ${
                   location.pathname === link.path ? "text-brand-primary" : "text-white"
                 }`}
               >
@@ -63,7 +63,7 @@ export function Navbar() {
             {isAdmin && (
               <Link
                 to="/admin"
-                className={`font-heading font-black uppercase tracking-[0.2em] text-[10px] transition-all text-brand-primary hover:text-white flex items-center gap-2 ${
+                className={`font-heading font-black uppercase tracking-[0.2em] text-[12px] transition-all text-brand-primary hover:text-white flex items-center gap-2 ${
                   location.pathname === "/admin" ? "underline underline-offset-4" : ""
                 }`}
               >
@@ -101,7 +101,7 @@ export function Navbar() {
                   key={link.name}
                   to={link.path}
                   className={`font-heading font-black tracking-[0.2em] transition-all hover:text-brand-primary ${
-                    link.name === "us" ? "lowercase text-[9px]" : "uppercase text-[10px]"
+                    link.name === "us" ? "lowercase text-[12px]" : "uppercase text-[12px]"
                   } ${
                     location.pathname === link.path ? "text-brand-primary" : "text-white"
                   }`}
@@ -116,7 +116,7 @@ export function Navbar() {
                 {user ? (
                   <button 
                     onClick={logout}
-                    className="text-white hover:text-brand-secondary transition-colors text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                    className="text-white hover:text-brand-secondary transition-colors text-[12px] font-black uppercase tracking-widest flex items-center gap-2"
                   >
                     <LogOut className="w-4 h-4" />
                     Salir
@@ -124,7 +124,7 @@ export function Navbar() {
                 ) : (
                   <button 
                     onClick={signInWithGoogle}
-                    className="text-white hover:text-brand-primary transition-colors text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                    className="text-white hover:text-brand-primary transition-colors text-[12px] font-black uppercase tracking-widest flex items-center gap-2"
                   >
                     <LogIn className="w-4 h-4" />
                     Entrar
@@ -133,7 +133,7 @@ export function Navbar() {
               </div>
             )}
 
-            <button className="text-white hover:text-brand-primary transition-colors hidden sm:block text-[10px] font-black uppercase tracking-widest">
+            <button className="text-white hover:text-brand-primary transition-colors hidden sm:block text-[12px] font-black uppercase tracking-widest">
               SALE
             </button>
             <Link to="/cart" className="relative text-white hover:text-brand-primary transition-colors">

@@ -2,46 +2,141 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
-import { CheckCircle2, CreditCard, MapPin, Truck, ArrowLeft } from "lucide-react";
+import { CheckCircle2, CreditCard, MapPin, Truck, ArrowLeft, Ticket, Loader2, X, ShieldCheck } from "lucide-react";
 import { motion } from "motion/react";
 import { formatPrice } from "@/lib/formatters";
+import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
+import { collection, query, where, getDocs, addDoc, updateDoc, doc, increment, serverTimestamp } from "firebase/firestore";
+import { PromoCode } from "@/types";
 
 export function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+  const [promoError, setPromoError] = useState("");
+
+  const [shippingInfo, setShippingInfo] = useState({
+    firstName: "",
+    lastName: "",
+    address: "",
+    city: "",
+    zipCode: "",
+    phone: "",
+    email: ""
+  });
 
   if (items.length === 0 && step !== 3) {
     navigate("/shop");
     return null;
   }
 
+  const handleApplyPromo = async () => {
+    if (!promoInput.trim()) return;
+    
+    setIsApplyingPromo(true);
+    setPromoError("");
+    
+    try {
+      const q = query(
+        collection(db, "promoCodes"), 
+        where("code", "==", promoInput.toUpperCase().trim()),
+        where("isActive", "==", true)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        setPromoError("Código no válido o expirado");
+        setAppliedPromo(null);
+      } else {
+        const promoData = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as PromoCode;
+        setAppliedPromo(promoData);
+        setPromoInput("");
+      }
+    } catch (error) {
+      console.error("Error applying promo:", error);
+      setPromoError("Error al validar el código");
+    } finally {
+      setIsApplyingPromo(false);
+    }
+  };
+
+  const calculateDiscount = () => {
+    if (!appliedPromo) return 0;
+    if (appliedPromo.discountType === "percentage") {
+      return (totalPrice * appliedPromo.discountValue) / 100;
+    }
+    return appliedPromo.discountValue;
+  };
+
+  const discountAmount = calculateDiscount();
+  const finalTotal = totalPrice + 15 - discountAmount;
+
   const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setStep(2);
   };
 
-  const handlePaymentSubmit = (e: React.FormEvent) => {
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
-    // Simulate payment processing
-    setTimeout(() => {
+    
+    try {
+      // Save order to Firestore
+      const orderData = {
+        userId: "anonymous", // In a real app, this would be the auth UID
+        items: items.map(item => ({
+          productId: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        total: finalTotal,
+        discountAmount: discountAmount,
+        promoCode: appliedPromo?.code || null,
+        shippingInfo,
+        status: "pending",
+        createdAt: serverTimestamp()
+      };
+
+      const orderRef = await addDoc(collection(db, "orders"), orderData);
+      
+      // Update promo code usage count if applicable
+      if (appliedPromo) {
+        await updateDoc(doc(db, "promoCodes", appliedPromo.id), {
+          usageCount: increment(1)
+        });
+      }
+
       setIsProcessing(false);
       setStep(3);
       clearCart();
-    }, 2000);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, "orders");
+      setIsProcessing(false);
+    }
   };
 
   return (
     <div className="bg-brand-black min-h-screen pt-40 pb-24 text-white">
       <div className="container mx-auto px-6 max-w-5xl">
-        <div className="flex items-center justify-center gap-3 mb-16">
-          <span className="w-8 h-[1px] bg-brand-primary"></span>
-          <h1 className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-primary">
-            Finalizar Pedido
-          </h1>
-          <span className="w-8 h-[1px] bg-brand-primary"></span>
+        <div className="flex flex-col items-center justify-center gap-4 mb-16">
+          <div className="flex items-center gap-3">
+            <span className="w-8 h-[1px] bg-brand-primary"></span>
+            <h1 className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-primary">
+              Finalizar Pedido
+            </h1>
+            <span className="w-8 h-[1px] bg-brand-primary"></span>
+          </div>
+          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
+            <ShieldCheck className="w-3 h-3 text-brand-primary" />
+            <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">Checkout Seguro & Encriptado</span>
+          </div>
         </div>
 
         {/* Progress Bar - Refined */}
@@ -93,44 +188,86 @@ export function Checkout() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-3">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Nombre</label>
-                      <input required type="text" className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
+                      <input 
+                        required 
+                        type="text" 
+                        value={shippingInfo.firstName}
+                        onChange={(e) => setShippingInfo({...shippingInfo, firstName: e.target.value})}
+                        className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" 
+                      />
                     </div>
                     <div className="space-y-3">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Apellidos</label>
-                      <input required type="text" className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
+                      <input 
+                        required 
+                        type="text" 
+                        value={shippingInfo.lastName}
+                        onChange={(e) => setShippingInfo({...shippingInfo, lastName: e.target.value})}
+                        className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" 
+                      />
                     </div>
                   </div>
                   
                   <div className="space-y-3">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Dirección</label>
-                    <input required type="text" className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
+                    <input 
+                      required 
+                      type="text" 
+                      value={shippingInfo.address}
+                      onChange={(e) => setShippingInfo({...shippingInfo, address: e.target.value})}
+                      className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" 
+                    />
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div className="space-y-3 md:col-span-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Ciudad</label>
-                      <input required type="text" className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
+                      <input 
+                        required 
+                        type="text" 
+                        value={shippingInfo.city}
+                        onChange={(e) => setShippingInfo({...shippingInfo, city: e.target.value})}
+                        className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" 
+                      />
                     </div>
                     <div className="space-y-3">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Código Postal</label>
-                      <input required type="text" className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
+                      <input 
+                        required 
+                        type="text" 
+                        value={shippingInfo.zipCode}
+                        onChange={(e) => setShippingInfo({...shippingInfo, zipCode: e.target.value})}
+                        className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" 
+                      />
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-3">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Teléfono</label>
-                      <input required type="tel" className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
+                      <input 
+                        required 
+                        type="tel" 
+                        value={shippingInfo.phone}
+                        onChange={(e) => setShippingInfo({...shippingInfo, phone: e.target.value})}
+                        className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" 
+                      />
                     </div>
                     <div className="space-y-3">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Email</label>
-                      <input required type="email" className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" />
+                      <input 
+                        required 
+                        type="email" 
+                        value={shippingInfo.email}
+                        onChange={(e) => setShippingInfo({...shippingInfo, email: e.target.value})}
+                        className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none" 
+                      />
                     </div>
                   </div>
 
                   <div className="pt-10 border-t border-white/10">
-                    <Button type="submit" size="lg" className="w-full h-16 text-xs font-black uppercase tracking-widest bg-brand-primary text-brand-black hover:bg-white rounded-full transition-all shadow-xl shadow-brand-primary/20">
-                      Continuar al Pago
+                    <Button type="submit" size="lg" className="w-full h-20 text-xs font-black uppercase tracking-[0.3em] bg-brand-primary text-brand-black hover:bg-white rounded-2xl transition-all shadow-[0_20px_40px_-15px_rgba(118,187,202,0.3)]">
+                      CONTINUAR AL PAGO
                     </Button>
                   </div>
                 </form>
@@ -158,11 +295,11 @@ export function Checkout() {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-4 pt-10 border-t border-white/10">
-                    <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1 h-16 rounded-full text-[10px] font-bold uppercase tracking-widest border-white/10 text-white hover:border-brand-primary">
+                    <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1 h-16 rounded-2xl text-[10px] font-bold uppercase tracking-widest border-white/10 text-white hover:border-brand-primary">
                       <ArrowLeft className="w-4 h-4 mr-2" /> Atrás
                     </Button>
-                    <Button type="submit" size="lg" className="flex-[2] h-16 text-xs font-black uppercase tracking-widest bg-brand-primary text-brand-black hover:bg-white rounded-full transition-all shadow-xl shadow-brand-primary/20" disabled={isProcessing}>
-                      {isProcessing ? "Procesando..." : `Pagar $${formatPrice(totalPrice + 15)}`}
+                    <Button type="submit" size="lg" className="flex-[2] h-20 text-xs font-black uppercase tracking-[0.3em] bg-brand-primary text-brand-black hover:bg-white rounded-2xl transition-all shadow-[0_20px_40px_-15px_rgba(118,187,202,0.3)]" disabled={isProcessing}>
+                      {isProcessing ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : `CONFIRMAR PAGO $${formatPrice(finalTotal)}`}
                     </Button>
                   </div>
                 </form>
@@ -189,7 +326,7 @@ export function Checkout() {
                   <h4 className="text-[10px] font-bold text-brand-primary uppercase tracking-widest mb-3 flex items-center gap-3">
                     <Truck className="w-4 h-4" /> Estado del Envío
                   </h4>
-                  <p className="text-sm text-gray-400 font-medium">Preparando para envío. Tiempo estimado: 3-5 días hábiles.</p>
+                  <p className="text-sm text-gray-400 font-medium">Preparando para envío. Entregas en Bogotá en menos de 24 horas según disponibilidad.</p>
                 </div>
                 <br />
                 <Button onClick={() => navigate("/shop")} size="lg" className="h-16 rounded-full px-12 text-xs font-black uppercase tracking-widest bg-brand-primary text-brand-black hover:bg-white transition-all">
@@ -231,9 +368,67 @@ export function Checkout() {
                     <span>Envío (Express)</span>
                     <span className="text-brand-primary">${formatPrice(15)}</span>
                   </div>
+                  
+                  {/* Promo Code Input */}
+                  <div className="pt-4">
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        <input 
+                          type="text" 
+                          value={promoInput}
+                          onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                          placeholder="CÓDIGO PROMO"
+                          className="w-full bg-brand-black/40 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white focus:ring-1 focus:ring-brand-primary outline-none transition-all"
+                        />
+                      </div>
+                      <Button 
+                        type="button"
+                        onClick={handleApplyPromo}
+                        disabled={isApplyingPromo || !promoInput.trim()}
+                        className="bg-white/5 border border-white/10 hover:bg-brand-primary hover:text-brand-black px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                      >
+                        {isApplyingPromo ? <Loader2 className="w-3 h-3 animate-spin" /> : "Aplicar"}
+                      </Button>
+                    </div>
+                    {promoError && <p className="text-[9px] text-brand-secondary mt-2 font-bold uppercase tracking-widest">{promoError}</p>}
+                    {appliedPromo && (
+                      <div className="flex justify-between items-center mt-3 bg-brand-primary/10 border border-brand-primary/20 rounded-xl px-4 py-2">
+                        <span className="text-[10px] font-black text-brand-primary uppercase tracking-widest">
+                          {appliedPromo.code} Aplicado
+                        </span>
+                        <button 
+                          onClick={() => setAppliedPromo(null)}
+                          className="text-brand-primary hover:text-white"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {appliedPromo && (
+                    <div className="flex justify-between text-brand-primary font-bold">
+                      <span>Descuento</span>
+                      <span>-${formatPrice(discountAmount)}</span>
+                    </div>
+                  )}
+
                   <div className="border-t border-white/10 pt-6 flex justify-between items-end mt-6">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-1">Total</span>
-                    <span className="serif text-4xl italic text-brand-primary">${formatPrice(totalPrice + 15)}</span>
+                    <span className="serif text-4xl italic text-brand-primary">${formatPrice(finalTotal)}</span>
+                  </div>
+                </div>
+
+                {/* Trust Badges in Sidebar */}
+                <div className="mt-10 grid grid-cols-2 gap-4">
+                  <div className="flex flex-col items-center text-center p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <ShieldCheck className="w-5 h-5 text-brand-primary mb-2" />
+                    <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">Garantía de Satisfacción</span>
+                  </div>
+                  <div className="flex flex-col items-center text-center p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <Truck className="w-5 h-5 text-brand-primary mb-2" />
+                    <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">Envío Discreto</span>
                   </div>
                 </div>
               </div>

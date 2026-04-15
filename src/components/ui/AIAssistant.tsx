@@ -43,7 +43,7 @@ export function AIAssistant() {
         Eres un asistente de IA relajado, divertido y auténtico para la marca "Fly and Chill".
         Fly and Chill es una marca premium de destilados de CBD (vapes) con una fuerte identidad cultural digital, urbana y comunitaria.
         Tono: Relajado, humorístico, directo, conectado con la cultura de internet.
-        Productos: Disposables, Cartuchos, Ediciones Especiales (97% CBD, orgánico). Sabores: Cinnamon Bun, Kush, Sativa.
+        Productos: Disposables, Cartuchos, Ediciones Especiales (Pureza Premium, orgánico). Sabores: Cinnamon Bun, Kush, Sativa.
         Valores: Pureza, Comunidad, Autenticidad, Experiencia, Innovación.
         Reglas: 
         - Recomienda productos basados en necesidades (ej. estrés -> Kush).
@@ -75,14 +75,21 @@ export function AIAssistant() {
       <motion.button
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-8 right-8 z-40 w-16 h-16 rounded-full bg-brand-black text-white flex items-center justify-center shadow-2xl shadow-brand-black/20 border border-white/10 group"
+        className="fixed bottom-4 right-4 z-40 w-48 h-48 md:w-56 md:h-56 flex items-center justify-center group"
         aria-label="Asistente IA"
       >
-        <div className="absolute inset-0 bg-brand-primary rounded-full scale-0 group-hover:scale-100 transition-transform duration-500 -z-10" />
-        <Sparkles className="w-7 h-7 group-hover:text-brand-black transition-colors duration-500" />
+        {/* Glow effect on hover */}
+        <div className="absolute inset-0 bg-brand-primary/10 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        
+        <img 
+          src="/asistente.png" 
+          alt="Fly Bot" 
+          className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(118,187,202,0.4)] relative z-10 transition-transform duration-500 group-hover:scale-110"
+          referrerPolicy="no-referrer"
+        />
       </motion.button>
 
       {/* Chat Modal */}

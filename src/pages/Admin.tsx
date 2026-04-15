@@ -1,28 +1,76 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useShop } from "@/context/ShopContext";
 import { Button } from "@/components/ui/Button";
-import { db, storage, handleFirestoreError, OperationType } from "@/lib/firebase";
-import { collection, doc, deleteDoc, addDoc, updateDoc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { Plus, Edit2, Trash2, X, Save, Package, Image as ImageIcon, Tag, Beaker, DollarSign, FileText, Upload, Loader2 } from "lucide-react";
+import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
+import { collection, doc, deleteDoc, addDoc, updateDoc, setDoc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { Plus, Edit2, Trash2, X, Save, Package, Image as ImageIcon, Tag, Beaker, DollarSign, FileText, Upload, Loader2, Ticket, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { formatPrice } from "@/lib/formatters";
-import { Product } from "@/types";
+import { Product, PromoCode } from "@/types";
 
 export function Admin() {
   const { products, loading, isAdmin } = useShop();
+  const [activeTab, setActiveTab] = useState<"products" | "promoCodes">("products");
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
+  const [loadingPromo, setLoadingPromo] = useState(true);
+  
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<Product> | null>(null);
+  
+  const [isEditingPromo, setIsEditingPromo] = useState(false);
+  const [currentPromo, setCurrentPromo] = useState<Partial<PromoCode> | null>(null);
+
   const [uploading, setUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageUrlInput, setImageUrlInput] = useState("");
 
+  // Custom Modal States
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmText?: string;
+    type?: 'danger' | 'primary';
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error';
+  } | null>(null);
+
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    
+    const q = query(collection(db, "promoCodes"), orderBy("code", "asc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const codes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PromoCode));
+      setPromoCodes(codes);
+      setLoadingPromo(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, "promoCodes");
+      setLoadingPromo(false);
+    });
+
+    return () => unsubscribe();
+  }, [isAdmin]);
+
   const addImageUrl = () => {
     if (!imageUrlInput.trim() || !currentProduct) return;
     const newImages = [...(currentProduct.images || []), imageUrlInput.trim()];
     if (newImages.length > 6) {
-      alert('Máximo 6 imágenes por producto.');
+      showNotification('Máximo 6 imágenes por producto.', 'error');
       return;
     }
     setCurrentProduct({ ...currentProduct, images: newImages });
@@ -57,7 +105,7 @@ export function Admin() {
       category: "Desechables",
       flavors: ["Natural"],
       stock: 10,
-      cbdContent: "1000mg",
+      cbdContent: "Premium",
       rating: 5,
       isFeatured: false,
     });
@@ -139,7 +187,7 @@ export function Admin() {
     const newImages = [...(currentProduct.images || [])];
     
     if (newImages.length + files.length > 6) {
-      alert('Máximo 6 imágenes por producto.');
+      showNotification('Máximo 6 imágenes por producto.', 'error');
       return;
     }
 
@@ -176,7 +224,7 @@ export function Admin() {
       console.log("All images processed locally");
     } catch (error) {
       console.error("Processing error:", error);
-      alert(`Error al procesar las imágenes: ${error instanceof Error ? error.message : String(error)}`);
+      showNotification(`Error al procesar las imágenes: ${error instanceof Error ? error.message : String(error)}`, 'error');
       setUploading(false);
     }
   };
@@ -208,128 +256,314 @@ export function Admin() {
     setCurrentProduct({ ...currentProduct, flavors: newFlavors });
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar este producto?")) return;
-    try {
-      await deleteDoc(doc(db, "products", id));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `products/${id}`);
-    }
+  const handleDelete = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar Producto",
+      message: "¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer.",
+      confirmText: "Eliminar",
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "products", id));
+          showNotification("Producto eliminado correctamente");
+        } catch (error) {
+          handleFirestoreError(error, OperationType.DELETE, `products/${id}`);
+          showNotification("Error al eliminar el producto", "error");
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
+  const handleAddNewPromo = () => {
+    setCurrentPromo({
+      code: "",
+      discountType: "percentage",
+      discountValue: 0,
+      isActive: true,
+      usageCount: 0
+    });
+    setIsEditingPromo(true);
+  };
+
+  const handleEditPromo = (promo: PromoCode) => {
+    setCurrentPromo({ ...promo });
+    setIsEditingPromo(true);
+  };
+
+  const handleDeletePromo = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar Código",
+      message: "¿Estás seguro de que quieres eliminar este código promocional?",
+      confirmText: "Eliminar",
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "promoCodes", id));
+          showNotification("Código promocional eliminado");
+        } catch (error) {
+          handleFirestoreError(error, OperationType.DELETE, `promoCodes/${id}`);
+          showNotification("Error al eliminar el código", "error");
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
+  const handleSubmitPromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPromo || !currentPromo.code) return;
+
+    setConfirmModal({
+      isOpen: true,
+      title: "Guardar Código",
+      message: "¿Deseas guardar los cambios en este código promocional?",
+      confirmText: "Guardar",
+      type: 'primary',
+      onConfirm: async () => {
+        setIsSaving(true);
+        try {
+          const promoData = {
+            ...currentPromo,
+            code: currentPromo.code.toUpperCase().trim()
+          };
+
+          if (currentPromo.id) {
+            await updateDoc(doc(db, "promoCodes", currentPromo.id), promoData as any);
+          } else {
+            const docRef = await addDoc(collection(db, "promoCodes"), promoData as any);
+            await updateDoc(docRef, { id: docRef.id });
+          }
+          
+          setIsEditingPromo(false);
+          setCurrentPromo(null);
+          showNotification("Código promocional guardado con éxito");
+        } catch (error) {
+          handleFirestoreError(error, OperationType.WRITE, "promoCodes");
+          showNotification("Error al guardar el código", "error");
+        } finally {
+          setIsSaving(false);
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        }
+      }
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentProduct || !currentProduct.images || currentProduct.images.length === 0) {
-      alert("Por favor, sube al menos una imagen para el producto.");
+      showNotification("Por favor, sube al menos una imagen para el producto.", "error");
       return;
     }
 
-    setIsSaving(true);
-    try {
-      if (currentProduct.id) {
-        // Use setDoc instead of updateDoc to handle "upsert" (create if missing)
-        // This is crucial for static products that don't exist in Firestore yet
-        await setDoc(doc(db, "products", currentProduct.id), currentProduct as any, { merge: true });
-      } else {
-        // Create new with auto-ID
-        const docRef = await addDoc(collection(db, "products"), currentProduct as any);
-        await updateDoc(docRef, { id: docRef.id });
+    setConfirmModal({
+      isOpen: true,
+      title: "Guardar Producto",
+      message: "¿Deseas guardar los cambios realizados en este producto?",
+      confirmText: "Guardar",
+      type: 'primary',
+      onConfirm: async () => {
+        setIsSaving(true);
+        try {
+          if (currentProduct.id) {
+            await setDoc(doc(db, "products", currentProduct.id), currentProduct as any, { merge: true });
+          } else {
+            const docRef = await addDoc(collection(db, "products"), currentProduct as any);
+            await updateDoc(docRef, { id: docRef.id });
+          }
+          
+          setIsEditing(false);
+          setCurrentProduct(null);
+          showNotification("Producto guardado correctamente");
+        } catch (error) {
+          handleFirestoreError(error, OperationType.WRITE, "products");
+          showNotification("Error al guardar el producto", "error");
+        } finally {
+          setIsSaving(false);
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        }
       }
-      
-      // Success: Close modal and reset state
-      setIsEditing(false);
-      setCurrentProduct(null);
-      console.log("Product saved successfully");
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, "products");
-    } finally {
-      setIsSaving(false);
-    }
+    });
   };
 
   return (
     <div className="bg-brand-black min-h-screen pt-32 pb-24 text-white">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center mb-12">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
             <h1 className="text-4xl md:text-6xl font-heading font-black uppercase tracking-tighter">
               Panel de <span className="text-brand-primary italic serif font-light lowercase">Control</span>
             </h1>
             <p className="text-gray-400 mt-2 uppercase tracking-widest text-[10px] font-bold">Gestión de Inventario Elite</p>
           </div>
-          <Button 
-            onClick={handleAddNew}
-            className="bg-brand-primary text-brand-black hover:bg-white rounded-2xl px-8 py-6 text-xs font-black uppercase tracking-widest flex items-center gap-3"
-          >
-            <Plus className="w-4 h-4" />
-            Nuevo Producto
-          </Button>
+          
+          <div className="flex flex-wrap gap-4">
+            <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
+              <button 
+                onClick={() => setActiveTab("products")}
+                className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === "products" ? "bg-brand-primary text-brand-black shadow-lg" : "text-gray-400 hover:text-white"}`}
+              >
+                <LayoutDashboard className="w-3 h-3" />
+                Productos
+              </button>
+              <button 
+                onClick={() => setActiveTab("promoCodes")}
+                className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === "promoCodes" ? "bg-brand-primary text-brand-black shadow-lg" : "text-gray-400 hover:text-white"}`}
+              >
+                <Ticket className="w-3 h-3" />
+                Códigos Promo
+              </button>
+            </div>
+
+            {activeTab === "products" ? (
+              <Button 
+                onClick={handleAddNew}
+                className="bg-brand-primary text-brand-black hover:bg-white rounded-2xl px-8 py-6 text-xs font-black uppercase tracking-widest flex items-center gap-3"
+              >
+                <Plus className="w-4 h-4" />
+                Nuevo Producto
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleAddNewPromo}
+                className="bg-brand-primary text-brand-black hover:bg-white rounded-2xl px-8 py-6 text-xs font-black uppercase tracking-widest flex items-center gap-3"
+              >
+                <Plus className="w-4 h-4" />
+                Nuevo Código
+              </Button>
+            )}
+          </div>
         </div>
 
-        {loading ? (
-          <div className="text-center py-20 animate-pulse text-brand-primary font-black uppercase tracking-widest">
-            Sincronizando con la nube...
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {products.map((product) => (
-              <div key={product.id} className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 hover:border-brand-primary/30 transition-all group">
-                <div className="flex gap-6 mb-6">
-                  <div className="w-24 h-24 bg-white/10 rounded-2xl overflow-hidden shrink-0">
-                    <img src={product.images[0]} alt={product.name} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                  </div>
-                  <div className="flex-grow">
-                    <h3 className="text-xl font-heading font-black uppercase tracking-tighter leading-tight mb-2 group-hover:text-brand-primary transition-colors">
-                      {product.name}
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1 text-brand-primary font-bold text-sm">
-                        <DollarSign className="w-3 h-3" />
-                        {formatPrice(product.price)}
+        {activeTab === "products" ? (
+          loading ? (
+            <div className="text-center py-20 animate-pulse text-brand-primary font-black uppercase tracking-widest">
+              Sincronizando productos...
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {products.map((product) => (
+                <div key={product.id} className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 hover:border-brand-primary/30 transition-all group">
+                  <div className="flex gap-6 mb-6">
+                    <div className="w-24 h-24 bg-white/10 rounded-2xl overflow-hidden shrink-0">
+                      <img src={product.images[0]} alt={product.name} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                    </div>
+                    <div className="flex-grow">
+                      <h3 className="text-xl font-heading font-black uppercase tracking-tighter leading-tight mb-2 group-hover:text-brand-primary transition-colors">
+                        {product.name}
+                      </h3>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 text-brand-primary font-bold text-sm">
+                          <DollarSign className="w-3 h-3" />
+                          {formatPrice(product.price)}
+                        </div>
+                        {product.isFeatured && (
+                          <span className="bg-brand-primary/20 text-brand-primary text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-full border border-brand-primary/30">
+                            Destacado
+                          </span>
+                        )}
                       </div>
-                      {product.isFeatured && (
-                        <span className="bg-brand-primary/20 text-brand-primary text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-full border border-brand-primary/30">
-                          Destacado
-                        </span>
-                      )}
                     </div>
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                  <div className="bg-white/5 rounded-xl p-3 border border-white/5">
-                    <div className="text-[8px] text-gray-500 uppercase font-black tracking-widest mb-1">Stock</div>
-                    <div className={`text-sm font-black ${product.stock < 5 ? "text-brand-secondary" : "text-white"}`}>
-                      {product.stock} unidades
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-8">
+                    <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                      <div className="text-[8px] text-gray-500 uppercase font-black tracking-widest mb-1">Stock</div>
+                      <div className={`text-sm font-black ${product.stock < 5 ? "text-brand-secondary" : "text-white"}`}>
+                        {product.stock} unidades
+                      </div>
+                    </div>
+                    <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                      <div className="text-[8px] text-gray-500 uppercase font-black tracking-widest mb-1">Categoría</div>
+                      <div className="text-sm font-black truncate">{product.category}</div>
                     </div>
                   </div>
-                  <div className="bg-white/5 rounded-xl p-3 border border-white/5">
-                    <div className="text-[8px] text-gray-500 uppercase font-black tracking-widest mb-1">Categoría</div>
-                    <div className="text-sm font-black truncate">{product.category}</div>
-                  </div>
-                </div>
 
-                <div className="flex gap-3">
-                  <Button 
-                    onClick={() => handleEdit(product)}
-                    variant="outline"
-                    className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest py-4 rounded-2xl"
-                  >
-                    <Edit2 className="w-3 h-3 mr-2" />
-                    Editar
-                  </Button>
-                  <Button 
-                    onClick={() => handleDelete(product.id)}
-                    variant="outline"
-                    className="flex-1 bg-brand-secondary/10 border-brand-secondary/20 text-brand-secondary hover:bg-brand-secondary hover:text-white text-[10px] font-black uppercase tracking-widest py-4 rounded-2xl"
-                  >
-                    <Trash2 className="w-3 h-3 mr-2" />
-                    Borrar
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button 
+                      onClick={() => handleEdit(product)}
+                      variant="outline"
+                      className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest py-4 rounded-2xl"
+                    >
+                      <Edit2 className="w-3 h-3 mr-2" />
+                      Editar
+                    </Button>
+                    <Button 
+                      onClick={() => handleDelete(product.id)}
+                      variant="outline"
+                      className="flex-1 bg-brand-secondary/10 border-brand-secondary/20 text-brand-secondary hover:bg-brand-secondary hover:text-white text-[10px] font-black uppercase tracking-widest py-4 rounded-2xl"
+                    >
+                      <Trash2 className="w-3 h-3 mr-2" />
+                      Borrar
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
+        ) : (
+          loadingPromo ? (
+            <div className="text-center py-20 animate-pulse text-brand-primary font-black uppercase tracking-widest">
+              Sincronizando códigos...
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {promoCodes.map((promo) => (
+                <div key={promo.id} className="bg-white/5 border border-white/10 rounded-3xl p-6 hover:border-brand-primary/30 transition-all">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="bg-brand-primary/10 text-brand-primary px-4 py-2 rounded-xl border border-brand-primary/20">
+                      <span className="text-lg font-black tracking-tighter">{promo.code}</span>
+                    </div>
+                    <div className={`w-3 h-3 rounded-full ${promo.isActive ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" : "bg-gray-600"}`} />
+                  </div>
+                  
+                  <div className="space-y-4 mb-6">
+                    <div>
+                      <div className="text-[8px] text-gray-500 uppercase font-black tracking-widest mb-1">Descuento</div>
+                      <div className="text-xl font-black text-white">
+                        {promo.discountType === "percentage" ? `${promo.discountValue}%` : `$${formatPrice(promo.discountValue)}`}
+                      </div>
+                    </div>
+                    <div className="flex justify-between">
+                      <div>
+                        <div className="text-[8px] text-gray-500 uppercase font-black tracking-widest mb-1">Usos</div>
+                        <div className="text-sm font-bold text-white">{promo.usageCount}</div>
+                      </div>
+                      <div>
+                        <div className="text-[8px] text-gray-500 uppercase font-black tracking-widest mb-1">Estado</div>
+                        <div className={`text-[10px] font-black uppercase tracking-widest ${promo.isActive ? "text-green-500" : "text-gray-500"}`}>
+                          {promo.isActive ? "Activo" : "Inactivo"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleEditPromo(promo)}
+                      className="flex-1 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest py-3 rounded-xl border border-white/5 transition-all"
+                    >
+                      Editar
+                    </button>
+                    <button 
+                      onClick={() => handleDeletePromo(promo.id)}
+                      className="flex-1 bg-brand-secondary/10 text-brand-secondary hover:bg-brand-secondary hover:text-white text-[10px] font-black uppercase tracking-widest py-3 rounded-xl border border-brand-secondary/20 transition-all"
+                    >
+                      Borrar
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {promoCodes.length === 0 && (
+                <div className="col-span-full text-center py-20 bg-white/5 rounded-[3rem] border border-dashed border-white/10">
+                  <Ticket className="w-12 h-12 text-gray-600 mx-auto mb-4 opacity-20" />
+                  <p className="text-gray-500 uppercase tracking-widest text-sm font-bold">No hay códigos promocionales registrados</p>
+                </div>
+              )}
+            </div>
+          )
         )}
 
         {/* Edit Modal */}
@@ -550,7 +784,7 @@ export function Admin() {
                           value={currentProduct.cbdContent}
                           onChange={(e) => setCurrentProduct({...currentProduct, cbdContent: e.target.value})}
                           className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary outline-none transition-all"
-                          placeholder="Ej: 1000mg, 500mg"
+                          placeholder="Ej: Premium, Elite"
                         />
                       </div>
 
@@ -614,6 +848,181 @@ export function Admin() {
                       </Button>
                     </div>
                   </form>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+        {/* Promo Code Edit Modal */}
+        <AnimatePresence>
+          {isEditingPromo && currentPromo && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsEditingPromo(false)}
+                className="absolute inset-0 bg-brand-black/90 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-lg bg-white/5 border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden"
+              >
+                <div className="p-8 md:p-12">
+                  <div className="flex justify-between items-center mb-10">
+                    <h2 className="text-3xl font-heading font-black uppercase tracking-tighter">
+                      {currentPromo.id ? "Editar" : "Nuevo"} <span className="text-brand-primary">Código</span>
+                    </h2>
+                    <button onClick={() => setIsEditingPromo(false)} className="text-gray-400 hover:text-white transition-colors">
+                      <X className="w-8 h-8" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSubmitPromo} className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Código (Ej: FLY20)</label>
+                      <input 
+                        required
+                        type="text"
+                        value={currentPromo.code}
+                        onChange={(e) => setCurrentPromo({...currentPromo, code: e.target.value.toUpperCase()})}
+                        className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary outline-none transition-all"
+                        placeholder="FLY20"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Tipo</label>
+                        <select 
+                          value={currentPromo.discountType}
+                          onChange={(e) => setCurrentPromo({...currentPromo, discountType: e.target.value as any})}
+                          className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary outline-none transition-all appearance-none"
+                        >
+                          <option value="percentage">Porcentaje (%)</option>
+                          <option value="fixed">Fijo ($)</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Valor</label>
+                        <input 
+                          required
+                          type="number"
+                          value={isNaN(currentPromo.discountValue) ? "" : currentPromo.discountValue}
+                          onChange={(e) => {
+                            const val = e.target.value === "" ? NaN : parseFloat(e.target.value);
+                            setCurrentPromo({...currentPromo, discountValue: val});
+                          }}
+                          className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 bg-white/5 p-6 rounded-2xl border border-white/5">
+                      <div className="flex-grow">
+                        <h4 className="text-sm font-black uppercase tracking-widest">Código Activo</h4>
+                        <p className="text-[10px] text-gray-500 uppercase mt-1">Los clientes podrán usarlo en el checkout</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPromo({...currentPromo, isActive: !currentPromo.isActive})}
+                        className={`w-14 h-8 rounded-full transition-all relative ${currentPromo.isActive ? 'bg-brand-primary' : 'bg-white/10'}`}
+                      >
+                        <div className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all ${currentPromo.isActive ? 'left-7' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex gap-4 pt-6">
+                      <Button 
+                        type="submit"
+                        disabled={isSaving}
+                        className="flex-1 bg-brand-primary text-brand-black hover:bg-white rounded-2xl py-6 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-3"
+                      >
+                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {currentPromo.id ? "Guardar" : "Crear"}
+                      </Button>
+                      <Button 
+                        type="button"
+                        onClick={() => setIsEditingPromo(false)}
+                        variant="outline"
+                        className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 text-white rounded-2xl py-6 text-xs font-black uppercase tracking-widest"
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Global Notification */}
+        <AnimatePresence>
+          {notification && (
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="fixed bottom-8 right-8 z-[100]"
+            >
+              <div className={`px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border ${
+                notification.type === 'success' 
+                  ? 'bg-green-500/10 border-green-500/20 text-green-500' 
+                  : 'bg-brand-secondary/10 border-brand-secondary/20 text-brand-secondary'
+              }`}>
+                <div className={`w-2 h-2 rounded-full animate-pulse ${
+                  notification.type === 'success' ? 'bg-green-500' : 'bg-brand-secondary'
+                }`} />
+                <span className="text-[10px] font-black uppercase tracking-widest">{notification.message}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Custom Confirmation Modal */}
+        <AnimatePresence>
+          {confirmModal.isOpen && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                className="absolute inset-0 bg-brand-black/90 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-md bg-white/5 border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden p-10 text-center"
+              >
+                <h3 className="text-2xl font-heading font-black uppercase tracking-tighter mb-4">
+                  {confirmModal.title}
+                </h3>
+                <p className="text-gray-400 text-sm mb-8">
+                  {confirmModal.message}
+                </p>
+                <div className="flex gap-4">
+                  <Button 
+                    onClick={confirmModal.onConfirm}
+                    className={`flex-1 rounded-2xl py-6 text-[10px] font-black uppercase tracking-widest ${
+                      confirmModal.type === 'danger' 
+                        ? 'bg-brand-secondary text-white hover:bg-white hover:text-brand-secondary' 
+                        : 'bg-brand-primary text-brand-black hover:bg-white'
+                    }`}
+                  >
+                    {confirmModal.confirmText || "Confirmar"}
+                  </Button>
+                  <Button 
+                    onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                    variant="outline"
+                    className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 text-white rounded-2xl py-6 text-[10px] font-black uppercase tracking-widest"
+                  >
+                    Cancelar
+                  </Button>
                 </div>
               </motion.div>
             </div>
