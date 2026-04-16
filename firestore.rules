@@ -155,5 +155,10 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isOwner(userId) && hasOnlyAllowedFields(['role', 'email', 'name']) && request.resource.data.role == 'user';
       allow update: if isAdmin();
     }
+    // Leads Collection
+    match /leads/{leadId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only server-side (Admin SDK) can write
+    }
   }
 }

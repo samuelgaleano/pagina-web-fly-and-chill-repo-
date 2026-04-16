@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
-import { CheckCircle2, CreditCard, MapPin, Truck, ArrowLeft, Ticket, Loader2, X, ShieldCheck } from "lucide-react";
+import { CheckCircle2, CreditCard, MapPin, Truck, ArrowLeft, Ticket, Loader2, X, ShieldCheck, Phone } from "lucide-react";
 import { motion } from "motion/react";
 import { formatPrice } from "@/lib/formatters";
 import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
@@ -29,6 +29,9 @@ export function Checkout() {
     phone: "",
     email: ""
   });
+
+  const [paymentMethod, setPaymentMethod] = useState<"nequi" | "pse_card">("nequi");
+  const [orderId, setOrderId] = useState("");
 
   if (items.length === 0 && step !== 3) {
     navigate("/shop");
@@ -87,9 +90,8 @@ export function Checkout() {
     setIsProcessing(true);
     
     try {
-      // Save order to Firestore
       const orderData = {
-        userId: "anonymous", // In a real app, this would be the auth UID
+        userId: "anonymous",
         items: items.map(item => ({
           productId: item.id,
           name: item.name,
@@ -100,24 +102,37 @@ export function Checkout() {
         discountAmount: discountAmount,
         promoCode: appliedPromo?.code || null,
         shippingInfo,
-        status: "pending",
-        createdAt: serverTimestamp()
+        paymentMethod,
+        status: "pending"
       };
 
-      const orderRef = await addDoc(collection(db, "orders"), orderData);
-      
-      // Update promo code usage count if applicable
-      if (appliedPromo) {
-        await updateDoc(doc(db, "promoCodes", appliedPromo.id), {
-          usageCount: increment(1)
-        });
-      }
+      const response = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderData }),
+      });
 
-      setIsProcessing(false);
-      setStep(3);
-      clearCart();
+      const data = await response.json();
+
+      if (response.ok) {
+        setOrderId(data.orderId);
+        // Update promo code usage count if applicable
+        if (appliedPromo) {
+          await updateDoc(doc(db, "promoCodes", appliedPromo.id), {
+            usageCount: increment(1)
+          });
+        }
+
+        setIsProcessing(false);
+        setStep(3);
+        clearCart();
+      } else {
+        throw new Error(data.error || "Error al crear el pedido");
+      }
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, "orders");
+      console.error("Checkout error:", error);
       setIsProcessing(false);
     }
   };
@@ -287,11 +302,72 @@ export function Checkout() {
                   Método de Pago
                 </h2>
                 <form onSubmit={handlePaymentSubmit} className="space-y-8">
-                  <div className="bg-brand-black/40 rounded-3xl p-10 mb-10 text-center border-2 border-dashed border-white/10">
-                    <p className="text-gray-400 text-sm mb-6 font-medium">Integración de pasarela de pago segura (Stripe/Bolt).</p>
-                    <div className="h-16 bg-brand-black/60 rounded-2xl border border-white/10 flex items-center justify-center text-brand-primary/40 text-[10px] font-bold uppercase tracking-[0.3em]">
-                      [ Elemento de Tarjeta de Crédito ]
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("nequi")}
+                      className={`p-8 rounded-3xl border-2 transition-all text-left group ${
+                        paymentMethod === "nequi" 
+                          ? "bg-brand-primary/10 border-brand-primary shadow-lg shadow-brand-primary/10" 
+                          : "bg-white/5 border-white/10 hover:border-white/20"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${
+                          paymentMethod === "nequi" ? "bg-brand-primary text-brand-black" : "bg-white/10 text-gray-400"
+                        }`}>
+                          <Phone className="w-6 h-6" />
+                        </div>
+                        {paymentMethod === "nequi" && <CheckCircle2 className="w-5 h-5 text-brand-primary" />}
+                      </div>
+                      <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">Nequi / Transfiya</h3>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Transferencia directa inmediata</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("pse_card")}
+                      className={`p-8 rounded-3xl border-2 transition-all text-left group ${
+                        paymentMethod === "pse_card" 
+                          ? "bg-brand-primary/10 border-brand-primary shadow-lg shadow-brand-primary/10" 
+                          : "bg-white/5 border-white/10 hover:border-white/20"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${
+                          paymentMethod === "pse_card" ? "bg-brand-primary text-brand-black" : "bg-white/10 text-gray-400"
+                        }`}>
+                          <CreditCard className="w-6 h-6" />
+                        </div>
+                        {paymentMethod === "pse_card" && <CheckCircle2 className="w-5 h-5 text-brand-primary" />}
+                      </div>
+                      <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">PSE / Tarjetas</h3>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Link de pago seguro</p>
+                    </button>
+                  </div>
+
+                  <div className="bg-brand-black/40 rounded-3xl p-8 border border-white/10">
+                    {paymentMethod === "nequi" ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4 text-brand-primary">
+                          <ShieldCheck className="w-5 h-5" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Instrucciones de Pago</span>
+                        </div>
+                        <p className="text-sm text-gray-400 leading-relaxed">
+                          Al confirmar, recibirás un correo con los datos para la transferencia. Deberás enviar el comprobante a nuestro WhatsApp para procesar tu envío.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4 text-brand-primary">
+                          <ShieldCheck className="w-5 h-5" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Link de Pago Personalizado</span>
+                        </div>
+                        <p className="text-sm text-gray-400 leading-relaxed">
+                          Un administrador generará un link de pago seguro (PSE/Tarjeta) y te lo enviará por correo o WhatsApp en los próximos minutos.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-4 pt-10 border-t border-white/10">

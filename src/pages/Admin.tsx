@@ -3,22 +3,38 @@ import { useShop } from "@/context/ShopContext";
 import { Button } from "@/components/ui/Button";
 import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
 import { collection, doc, deleteDoc, addDoc, updateDoc, setDoc, onSnapshot, query, orderBy } from "firebase/firestore";
-import { Plus, Edit2, Trash2, X, Save, Package, Image as ImageIcon, Tag, Beaker, DollarSign, FileText, Upload, Loader2, Ticket, LayoutDashboard } from "lucide-react";
+import { Plus, Edit2, Trash2, X, Save, Package, Image as ImageIcon, Tag, Beaker, DollarSign, FileText, Upload, Loader2, Ticket, LayoutDashboard, Users } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { formatPrice } from "@/lib/formatters";
 import { Product, PromoCode } from "@/types";
 
+interface Lead {
+  id: string;
+  email: string;
+  signupDate: any;
+  source: string;
+  status: string;
+}
+
 export function Admin() {
   const { products, loading, isAdmin } = useShop();
-  const [activeTab, setActiveTab] = useState<"products" | "promoCodes">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "promoCodes" | "leads" | "orders">("products");
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loadingPromo, setLoadingPromo] = useState(true);
+  const [loadingLeads, setLoadingLeads] = useState(true);
+  const [loadingOrders, setLoadingOrders] = useState(true);
   
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<Product> | null>(null);
   
   const [isEditingPromo, setIsEditingPromo] = useState(false);
   const [currentPromo, setCurrentPromo] = useState<Partial<PromoCode> | null>(null);
+
+  const [isEditingOrder, setIsEditingOrder] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState<any | null>(null);
+  const [paymentLinkInput, setPaymentLinkInput] = useState("");
 
   const [uploading, setUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,6 +77,38 @@ export function Admin() {
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, "promoCodes");
       setLoadingPromo(false);
+    });
+
+    return () => unsubscribe();
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    
+    const q = query(collection(db, "leads"), orderBy("signupDate", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const leadData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lead));
+      setLeads(leadData);
+      setLoadingLeads(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, "leads");
+      setLoadingLeads(false);
+    });
+
+    return () => unsubscribe();
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    
+    const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const orderData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setOrders(orderData);
+      setLoadingOrders(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, "orders");
+      setLoadingOrders(false);
     });
 
     return () => unsubscribe();
@@ -388,6 +436,35 @@ export function Admin() {
     });
   };
 
+  const handleUpdateOrder = async (orderId: string, updates: any) => {
+    try {
+      await updateDoc(doc(db, "orders", orderId), updates);
+      showNotification("Pedido actualizado correctamente");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `orders/${orderId}`);
+      showNotification("Error al actualizar el pedido", "error");
+    }
+  };
+
+  const handleSendPaymentLink = async (order: any) => {
+    if (!paymentLinkInput.trim()) return;
+    
+    try {
+      await updateDoc(doc(db, "orders", order.id), {
+        paymentLink: paymentLinkInput.trim(),
+        status: "pending" // Ensure it's pending if link is sent
+      });
+      
+      // In a real app, you'd trigger an email here too
+      showNotification("Link de pago guardado y listo para enviar");
+      setIsEditingOrder(false);
+      setPaymentLinkInput("");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `orders/${order.id}`);
+      showNotification("Error al guardar el link de pago", "error");
+    }
+  };
+
   return (
     <div className="bg-brand-black min-h-screen pt-32 pb-24 text-white">
       <div className="container mx-auto px-4">
@@ -415,6 +492,20 @@ export function Admin() {
                 <Ticket className="w-3 h-3" />
                 Códigos Promo
               </button>
+              <button 
+                onClick={() => setActiveTab("leads")}
+                className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === "leads" ? "bg-brand-primary text-brand-black shadow-lg" : "text-gray-400 hover:text-white"}`}
+              >
+                <Users className="w-3 h-3" />
+                Leads
+              </button>
+              <button 
+                onClick={() => setActiveTab("orders")}
+                className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === "orders" ? "bg-brand-primary text-brand-black shadow-lg" : "text-gray-400 hover:text-white"}`}
+              >
+                <Package className="w-3 h-3" />
+                Pedidos
+              </button>
             </div>
 
             {activeTab === "products" ? (
@@ -425,7 +516,7 @@ export function Admin() {
                 <Plus className="w-4 h-4" />
                 Nuevo Producto
               </Button>
-            ) : (
+            ) : activeTab === "promoCodes" ? (
               <Button 
                 onClick={handleAddNewPromo}
                 className="bg-brand-primary text-brand-black hover:bg-white rounded-2xl px-8 py-6 text-xs font-black uppercase tracking-widest flex items-center gap-3"
@@ -433,7 +524,7 @@ export function Admin() {
                 <Plus className="w-4 h-4" />
                 Nuevo Código
               </Button>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -503,7 +594,7 @@ export function Admin() {
               ))}
             </div>
           )
-        ) : (
+        ) : activeTab === "promoCodes" ? (
           loadingPromo ? (
             <div className="text-center py-20 animate-pulse text-brand-primary font-black uppercase tracking-widest">
               Sincronizando códigos...
@@ -562,6 +653,171 @@ export function Admin() {
                   <p className="text-gray-500 uppercase tracking-widest text-sm font-bold">No hay códigos promocionales registrados</p>
                 </div>
               )}
+            </div>
+          )
+        ) : activeTab === "orders" ? (
+          loadingOrders ? (
+            <div className="text-center py-20 animate-pulse text-brand-primary font-black uppercase tracking-widest">
+              Sincronizando pedidos...
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {orders.map((order) => (
+                <div key={order.id} className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 hover:border-brand-primary/30 transition-all">
+                  <div className="flex flex-col md:flex-row justify-between gap-6 mb-8">
+                    <div className="flex gap-6">
+                      <div className="w-16 h-16 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary shrink-0">
+                        <Package className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="text-xl font-heading font-black uppercase tracking-tighter">
+                            Pedido #{order.id.substring(0, 6).toUpperCase()}
+                          </h3>
+                          <span className={`text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
+                            order.status === 'paid' ? 'bg-green-500/10 border-green-500/20 text-green-500' :
+                            order.status === 'shipped' ? 'bg-blue-500/10 border-blue-500/20 text-blue-500' :
+                            order.status === 'cancelled' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
+                            'bg-brand-primary/10 border-brand-primary/20 text-brand-primary'
+                          }`}>
+                            {order.status}
+                          </span>
+                        </div>
+                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">
+                          {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString() : "Reciente"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[8px] text-gray-500 uppercase font-black tracking-widest mb-1">Total del Pedido</div>
+                      <div className="text-2xl font-black text-brand-primary">${formatPrice(order.total)}</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div className="bg-white/5 rounded-3xl p-6 border border-white/5">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
+                        <Users className="w-3 h-3" /> Cliente
+                      </h4>
+                      <p className="font-bold text-white mb-1">{order.shippingInfo.firstName} {order.shippingInfo.lastName}</p>
+                      <p className="text-sm text-gray-400">{order.shippingInfo.email}</p>
+                      <p className="text-sm text-gray-400">{order.shippingInfo.phone}</p>
+                    </div>
+                    <div className="bg-white/5 rounded-3xl p-6 border border-white/5">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
+                        <ImageIcon className="w-3 h-3" /> Envío
+                      </h4>
+                      <p className="text-sm text-white mb-1">{order.shippingInfo.address}</p>
+                      <p className="text-sm text-gray-400">{order.shippingInfo.city}, {order.shippingInfo.zipCode}</p>
+                    </div>
+                    <div className="bg-white/5 rounded-3xl p-6 border border-white/5">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
+                        <DollarSign className="w-3 h-3" /> Pago ({order.paymentMethod})
+                      </h4>
+                      {order.paymentLink ? (
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-green-500 uppercase tracking-widest">Link Generado</p>
+                          <a href={order.paymentLink} target="_blank" rel="noopener noreferrer" className="text-xs text-brand-primary hover:underline break-all">
+                            {order.paymentLink}
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-500 italic">Sin link de pago generado</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-4 pt-6 border-t border-white/10">
+                    <select 
+                      value={order.status}
+                      onChange={(e) => handleUpdateOrder(order.id, { status: e.target.value })}
+                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-brand-primary"
+                    >
+                      <option value="pending">Pendiente</option>
+                      <option value="paid">Pagado</option>
+                      <option value="shipped">Enviado</option>
+                      <option value="cancelled">Cancelado</option>
+                    </select>
+
+                    <Button 
+                      onClick={() => {
+                        setCurrentOrder(order);
+                        setPaymentLinkInput(order.paymentLink || "");
+                        setIsEditingOrder(true);
+                      }}
+                      className="bg-brand-primary text-brand-black text-[10px] font-black uppercase tracking-widest px-6 py-2 rounded-xl"
+                    >
+                      Gestionar Pago
+                    </Button>
+
+                    <Button 
+                      onClick={() => {
+                        const message = `Hola ${order.shippingInfo.firstName}, soy del equipo de Fly and Chill. Respecto a tu pedido #${order.id.substring(0, 6).toUpperCase()}...`;
+                        window.open(`https://wa.me/${order.shippingInfo.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                      }}
+                      variant="outline"
+                      className="border-white/10 text-[10px] font-black uppercase tracking-widest px-6 py-2 rounded-xl"
+                    >
+                      WhatsApp
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {orders.length === 0 && (
+                <div className="text-center py-20 bg-white/5 rounded-[3rem] border border-dashed border-white/10">
+                  <Package className="w-12 h-12 text-gray-600 mx-auto mb-4 opacity-20" />
+                  <p className="text-gray-500 uppercase tracking-widest text-sm font-bold">No hay pedidos registrados aún</p>
+                </div>
+              )}
+            </div>
+          )
+        ) : (
+          loadingLeads ? (
+            <div className="text-center py-20 animate-pulse text-brand-primary font-black uppercase tracking-widest">
+              Sincronizando leads...
+            </div>
+          ) : (
+            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 bg-white/5">
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">Email</th>
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">Fecha de Registro</th>
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">Origen</th>
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.map((lead) => (
+                      <tr key={lead.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                        <td className="px-8 py-6 font-bold text-white">{lead.email}</td>
+                        <td className="px-8 py-6 text-gray-400 text-sm">
+                          {lead.signupDate?.toDate ? lead.signupDate.toDate().toLocaleString() : "Reciente"}
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className="bg-white/10 text-gray-300 text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-white/10">
+                            {lead.source}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className="text-brand-primary text-[10px] font-black uppercase tracking-widest">
+                            {lead.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {leads.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-8 py-20 text-center">
+                          <Users className="w-12 h-12 text-gray-600 mx-auto mb-4 opacity-20" />
+                          <p className="text-gray-500 uppercase tracking-widest text-sm font-bold">No hay leads registrados aún</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )
         )}
@@ -953,6 +1209,75 @@ export function Admin() {
                       </Button>
                     </div>
                   </form>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Order Management Modal */}
+        <AnimatePresence>
+          {isEditingOrder && currentOrder && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsEditingOrder(false)}
+                className="absolute inset-0 bg-brand-black/90 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-lg bg-white/5 border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden"
+              >
+                <div className="p-10">
+                  <div className="flex justify-between items-center mb-8">
+                    <h2 className="text-2xl font-heading font-black uppercase tracking-tighter">
+                      Gestionar <span className="text-brand-primary">Pago</span>
+                    </h2>
+                    <button onClick={() => setIsEditingOrder(false)} className="text-gray-400 hover:text-white transition-colors">
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="bg-white/5 rounded-2xl p-6 border border-white/5">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Método Seleccionado</p>
+                      <p className="text-lg font-bold text-white uppercase tracking-tight">
+                        {currentOrder.paymentMethod === 'nequi' ? '📲 Nequi / Transfiya' : '💳 PSE / Tarjetas'}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Link de Pago (PSE/Card)</label>
+                      <input 
+                        type="text"
+                        value={paymentLinkInput}
+                        onChange={(e) => setPaymentLinkInput(e.target.value)}
+                        className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary outline-none transition-all"
+                        placeholder="https://checkout.pse.com.co/..."
+                      />
+                      <p className="text-[10px] text-gray-600 italic">Pega aquí el link generado desde tu pasarela de pagos.</p>
+                    </div>
+
+                    <div className="flex gap-4 pt-4">
+                      <Button 
+                        onClick={() => handleSendPaymentLink(currentOrder)}
+                        className="flex-1 bg-brand-primary text-brand-black font-black uppercase tracking-widest py-4 rounded-2xl"
+                      >
+                        Guardar Link
+                      </Button>
+                      <Button 
+                        onClick={() => setIsEditingOrder(false)}
+                        variant="outline"
+                        className="flex-1 border-white/10 text-gray-400 font-black uppercase tracking-widest py-4 rounded-2xl"
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             </div>
