@@ -78,7 +78,17 @@ export function Checkout() {
   };
 
   const discountAmount = calculateDiscount();
-  const finalTotal = totalPrice + 15 - discountAmount;
+  
+  const getShippingCost = () => {
+    if (!shippingInfo.city) return 15000;
+    const city = shippingInfo.city.toLowerCase().trim();
+    if (city === "bogota" || city === "bogotá") return 10000;
+    return 15000;
+  };
+
+  const shippingCost = getShippingCost();
+  const subscriptionFee = 5000;
+  const finalTotal = totalPrice + shippingCost + subscriptionFee - discountAmount;
 
   const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -320,8 +330,8 @@ export function Checkout() {
                         </div>
                         {paymentMethod === "nequi" && <CheckCircle2 className="w-5 h-5 text-brand-primary" />}
                       </div>
-                      <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">Nequi / Transfiya</h3>
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Transferencia directa inmediata</p>
+                      <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">Transfija</h3>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Transferencia directa Nequi/Breve</p>
                     </button>
 
                     <button
@@ -341,8 +351,8 @@ export function Checkout() {
                         </div>
                         {paymentMethod === "pse_card" && <CheckCircle2 className="w-5 h-5 text-brand-primary" />}
                       </div>
-                      <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">PSE / Tarjetas</h3>
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Link de pago seguro</p>
+                      <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">PCI y tarjetas</h3>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Pasarela de pago segura</p>
                     </button>
                   </div>
 
@@ -354,17 +364,17 @@ export function Checkout() {
                           <span className="text-[10px] font-black uppercase tracking-widest">Instrucciones de Pago</span>
                         </div>
                         <p className="text-sm text-gray-400 leading-relaxed">
-                          Al confirmar, recibirás un correo con los datos para la transferencia. Deberás enviar el comprobante a nuestro WhatsApp para procesar tu envío.
+                          Al confirmar, recibirás un resumen con los datos para la transferencia a Nequi o Breve. Envía el comprobante por WhatsApp para procesar tu envío.
                         </p>
                       </div>
                     ) : (
                       <div className="space-y-4">
                         <div className="flex items-center gap-4 text-brand-primary">
                           <ShieldCheck className="w-5 h-5" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Link de Pago Personalizado</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">Pago con Link Directo</span>
                         </div>
                         <p className="text-sm text-gray-400 leading-relaxed">
-                          Un administrador generará un link de pago seguro (PSE/Tarjeta) y te lo enviará por correo o WhatsApp en los próximos minutos.
+                          Te enviaremos un link de pago personalizado a tu correo. Un administrador gestionará tu pago de forma manual pronto.
                         </p>
                       </div>
                     )}
@@ -441,8 +451,20 @@ export function Checkout() {
                     <span className="text-white">${formatPrice(totalPrice)}</span>
                   </div>
                   <div className="flex justify-between text-gray-400 font-medium">
-                    <span>Envío (Express)</span>
-                    <span className="text-brand-primary">${formatPrice(15)}</span>
+                    <div className="flex flex-col">
+                      <span>Envío</span>
+                      <span className="text-[8px] uppercase tracking-widest opacity-50">
+                        {shippingInfo.city ? (shippingInfo.city.toLowerCase().trim() === "bogota" || shippingInfo.city.toLowerCase().trim() === "bogotá" ? "Tarifa Bogotá" : "Tarifa Nacional") : "Calculando..."}
+                      </span>
+                    </div>
+                    <span className="text-brand-primary">${formatPrice(shippingCost)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-400 font-medium border-b border-white/5 pb-4">
+                    <div className="flex flex-col">
+                      <span>Suscripción Fly Club</span>
+                      <span className="text-[8px] uppercase tracking-widest opacity-50">Autorización de envío comunidad</span>
+                    </div>
+                    <span className="text-brand-primary">${formatPrice(subscriptionFee)}</span>
                   </div>
                   
                   {/* Promo Code Input */}

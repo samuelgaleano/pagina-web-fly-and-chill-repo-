@@ -80,7 +80,7 @@ async function startServer() {
         },
       });
 
-      const fromEmail = process.env.SMTP_FROM || '"Fly and Chill" <newsletter@flyandchill.com>';
+      const fromEmail = process.env.SMTP_FROM_NEWSLETTER || '"Fly and Chill" <newsletter@flyandchill.store>';
       const mailOptions = {
         from: fromEmail,
         to: email,
@@ -149,13 +149,13 @@ async function startServer() {
         },
       });
 
-      const fromEmail = process.env.SMTP_FROM || '"Fly and Chill" <orders@flyandchill.com>';
+      const fromEmail = process.env.SMTP_FROM_VENTAS || '"Fly and Chill" <ventas@flyandchill.store>';
       
       let paymentInstructions = "";
       if (paymentMethod === "nequi") {
         paymentInstructions = `
           <div style="background-color: #f9f9f9; padding: 20px; border-radius: 12px; border: 1px solid #76bbca; margin: 20px 0;">
-            <h3 style="color: #76bbca; margin-top: 0;">📲 Instrucciones de Pago (Nequi)</h3>
+            <h3 style="color: #76bbca; margin-top: 0;">📲 Instrucciones de Pago (Nequi / Breve)</h3>
             <p>Por favor realiza la transferencia del total a la siguiente cuenta:</p>
             <p style="font-size: 24px; font-weight: 900; color: #333; margin: 10px 0;">Nequi: 301 920 2618</p>
             <p style="font-size: 14px; color: #666;">Una vez realizado el pago, envía el comprobante a nuestro WhatsApp (+57 3019202618) o responde a este correo.</p>
@@ -164,9 +164,9 @@ async function startServer() {
       } else {
         paymentInstructions = `
           <div style="background-color: #f9f9f9; padding: 20px; border-radius: 12px; border: 1px solid #76bbca; margin: 20px 0;">
-            <h3 style="color: #76bbca; margin-top: 0;">💳 Pago con PSE / Tarjeta</h3>
-            <p>Has seleccionado pago con PSE o Tarjeta. Un administrador generará tu link de pago y te lo enviará en breve por este medio o vía WhatsApp.</p>
-            <p style="font-size: 14px; color: #666;">Si tienes alguna duda, contáctanos al WhatsApp +57 3019202618.</p>
+            <h3 style="color: #76bbca; margin-top: 0;">💳 Pago con PCI / Tarjetas</h3>
+            <p>Has seleccionado pago con PCI o Tarjetas. Un administrador generará tu link de pago y te lo enviará en breve por este medio o vía WhatsApp.</p>
+            <p style="font-size: 14px; color: #666;">Estamos preparando tu orden. Pronto recibirás el link oficial para completar la transacción.</p>
           </div>
         `;
       }
@@ -177,6 +177,11 @@ async function startServer() {
           <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${item.price.toLocaleString()}</td>
         </tr>
       `).join("");
+
+      const isBogota = shippingInfo.city.toLowerCase().trim() === "bogota" || shippingInfo.city.toLowerCase().trim() === "bogotá";
+      const shippingCost = isBogota ? 10000 : 15000;
+      const subscriptionFee = 5000;
+      const subtotal = items.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
 
       const mailOptions = {
         from: fromEmail,
@@ -190,6 +195,21 @@ async function startServer() {
             <h3 style="border-bottom: 2px solid #76bbca; padding-bottom: 5px;">Resumen del Pedido</h3>
             <table style="width: 100%; border-collapse: collapse;">
               ${itemsHtml}
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Subtotal</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${subtotal.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Envío (${isBogota ? 'Bogotá' : 'Nacional'})</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${shippingCost.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                  Suscripción Fly Club<br/>
+                  <small style="color: #888;">Autorización envío comunidad</small>
+                </td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${subscriptionFee.toLocaleString()}</td>
+              </tr>
               <tr>
                 <td style="padding: 10px; font-weight: bold;">Total</td>
                 <td style="padding: 10px; font-weight: bold; text-align: right; color: #76bbca; font-size: 20px;">$${total.toLocaleString()}</td>
@@ -211,10 +231,48 @@ async function startServer() {
       };
 
       transporter.sendMail(mailOptions).then(info => {
-        console.log("Order email sent: %s", info.messageId);
+        console.log("Order email sent to customer: %s", info.messageId);
       }).catch(err => {
-        console.error("Error sending order email:", err);
+        console.error("Error sending order email to customer:", err);
       });
+
+      // 3. Notify Admin if it's a PCI/Card payment
+      if (paymentMethod === "pse_card") {
+        const adminEmails = ["samuel.galeano.alvis@gmail.com", "dbonilla131369@gmail.com"].join(", ");
+        const adminMailOptions = {
+          from: fromEmail,
+          to: adminEmails,
+          subject: `⚠️ ACCIÓN REQUERIDA: Generar Link de Pago - Pedido #FC-${orderId.substring(0, 6).toUpperCase()}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f00; border-radius: 10px;">
+              <h2 style="color: #d00;">Nuevo Pedido PCI / Tarjetas</h2>
+              <p>Se requiere generar un link de pago manual para el siguiente cliente:</p>
+              
+              <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #f00;">
+                <p><strong>Cliente:</strong> ${shippingInfo.firstName} ${shippingInfo.lastName}</p>
+                <p><strong>Email:</strong> ${shippingInfo.email}</p>
+                <p><strong>Teléfono:</strong> ${shippingInfo.phone}</p>
+                <p><strong>Monto Total:</strong> $${total.toLocaleString()}</p>
+              </div>
+
+              <h3>Detalle de Productos:</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                ${itemsHtml}
+              </table>
+
+              <p style="margin-top: 20px;">Por favor genera el link y envíalo a: <strong>${shippingInfo.email}</strong></p>
+              <hr />
+              <p style="font-size: 12px; color: #666;">ID de Pedido: ${orderId}</p>
+            </div>
+          `
+        };
+
+        transporter.sendMail(adminMailOptions).then(info => {
+          console.log("Admin notification email sent: %s", info.messageId);
+        }).catch(err => {
+          console.error("Error sending admin notification email:", err);
+        });
+      }
 
       res.json({ success: true, orderId });
     } catch (error) {

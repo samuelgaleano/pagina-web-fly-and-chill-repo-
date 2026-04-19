@@ -57,7 +57,7 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() &&
         ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-          (request.auth.token.email == "samuel.galeano.alvis@gmail.com" && request.auth.token.email_verified == true));
+          ((request.auth.token.email == "samuel.galeano.alvis@gmail.com" || request.auth.token.email == "dbonilla131369@gmail.com") && request.auth.token.email_verified == true));
     }
 
     function isValidEmail(email) {
@@ -144,10 +144,10 @@ service cloud.firestore {
     }
 
     match /promoCodes/{codeId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow create, delete: if isAdmin() && isValidPromoCode(request.resource.data);
       allow update: if (isAdmin() && isValidPromoCode(request.resource.data)) || 
-                      (isAuthenticated() && usageCountOnlyIncremented());
+                      usageCountOnlyIncremented();
     }
 
     match /users/{userId} {
