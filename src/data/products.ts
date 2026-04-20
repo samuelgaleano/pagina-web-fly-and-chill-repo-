@@ -96,5 +96,17 @@ export const products: Product[] = [
     stock: 30,
     rating: 4.8,
     cbdContent: "N/A"
+  },
+  {
+    id: "head-bone-2g",
+    name: "Head Bone 2g",
+    category: "Desechables",
+    flavors: ["Hybrid"],
+    price: 55.00,
+    images: ["https://picsum.photos/seed/headbone/800/800"],
+    description: "Experiencia Head Bone de 2g. Potencia y sabor en un formato desechable de larga duración.",
+    stock: 25,
+    rating: 5.0,
+    cbdContent: "Premium"
   }
 ];

@@ -8,7 +8,7 @@ export function WhatsAppButton() {
       animate={{ scale: 1, opacity: 1 }}
       whileHover={{ scale: 1.1, y: -5 }}
       whileTap={{ scale: 0.9 }}
-      href="https://wa.me/573019202618?text=Hola,%20quisiera%20más%20información%20sobre%20los%20productos%20Fly%20and%20Chill"
+      href="https://api.whatsapp.com/send?phone=573019202618&text=Hola%20vengo%20desde%20la%20pagina%20web%20deseo%20comprar%20%3A%20"
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-48 right-8 z-40 w-16 h-16 rounded-full bg-brand-black text-white flex items-center justify-center shadow-2xl shadow-brand-black/20 border border-white/10 group"

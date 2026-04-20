@@ -28,6 +28,7 @@ export function Shop() {
   const [isFlavorsOpen, setIsFlavorsOpen] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
   const [currentPage, setCurrentPage] = useState(1);
+  const [recentlyAdded, setRecentlyAdded] = useState<Set<string>>(new Set());
   const itemsPerPage = 6;
 
   // Handle URL search params for initial category filtering
@@ -87,6 +88,18 @@ export function Shop() {
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleAddToCart = (product: any) => {
+    addToCart(product);
+    setRecentlyAdded(prev => new Set(prev).add(product.id));
+    setTimeout(() => {
+      setRecentlyAdded(prev => {
+        const next = new Set(prev);
+        next.delete(product.id);
+        return next;
+      });
+    }, 2000);
+  };
 
   if (loading && products.length === 0) {
     return (
@@ -323,15 +336,19 @@ export function Shop() {
                       <div className="absolute inset-0 bg-brand-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px] z-20">
                         <Link to={`/shop/${product.id}`} className="absolute inset-0 z-0" />
                         <Button 
-                          className="relative z-10 bg-brand-primary text-brand-black hover:bg-white rounded-full font-black uppercase tracking-widest px-10 py-7 shadow-[0_0_30px_rgba(118,187,202,0.5)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500"
+                          className={`relative z-10 rounded-full font-black uppercase tracking-widest px-10 py-7 shadow-[0_0_30px_rgba(118,187,202,0.5)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 ${
+                            recentlyAdded.has(product.id) 
+                              ? "bg-white text-brand-black scale-105" 
+                              : "bg-brand-primary text-brand-black hover:bg-white"
+                          }`}
                           disabled={product.stock === 0}
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            addToCart(product);
+                            handleAddToCart(product);
                           }}
                         >
-                          {product.stock > 0 ? "Añadir al Carrito" : "Agotado"}
+                          {product.stock === 0 ? "Agotado" : (recentlyAdded.has(product.id) ? "¡Añadido! ✅" : "Añadir al Carrito")}
                         </Button>
                       </div>
                     </div>

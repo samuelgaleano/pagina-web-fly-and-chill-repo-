@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useShop } from "@/context/ShopContext";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
-import { Star, ArrowLeft, ShieldCheck, Truck, Droplet, Minus, Plus, Loader2 } from "lucide-react";
+import { Star, ArrowLeft, ShieldCheck, Truck, Droplet, Minus, Plus, Loader2, Phone } from "lucide-react";
 import { formatPrice } from "@/lib/formatters";
 
 export function ProductDetail() {
@@ -15,8 +15,16 @@ export function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isAdded, setIsAdded] = useState(false);
 
   const product = products.find(p => p.id === id);
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    addToCart(product, quantity);
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 2000);
+  };
 
   if (loading) {
     return (
@@ -164,11 +172,15 @@ export function ProductDetail() {
               <div className="flex flex-col gap-4 relative z-10">
                 <Button 
                   size="lg" 
-                  className="w-full h-20 text-xs font-black tracking-[0.3em] bg-brand-primary text-brand-black hover:bg-white rounded-[1.5rem] transition-all shadow-[0_20px_40px_-15px_rgba(118,187,202,0.3)] hover:shadow-[0_25px_50px_-12px_rgba(118,187,202,0.4)] active:scale-95"
+                  className={`w-full h-20 text-xs font-black tracking-[0.3em] rounded-[1.5rem] transition-all shadow-[0_20px_40px_-15px_rgba(118,187,202,0.3)] hover:shadow-[0_25px_50px_-12px_rgba(118,187,202,0.4)] active:scale-95 ${
+                    isAdded 
+                      ? "bg-white text-brand-black" 
+                      : "bg-brand-primary text-brand-black hover:bg-white"
+                  }`}
                   disabled={product.stock === 0}
-                  onClick={() => addToCart(product, quantity)}
+                  onClick={handleAddToCart}
                 >
-                  AÑADIR AL CARRITO
+                  {product.stock === 0 ? "AGOTADO" : (isAdded ? "¡AÑADIDO! ✅" : "AÑADIR AL CARRITO")}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -182,6 +194,16 @@ export function ProductDetail() {
                 >
                   <span className="group-hover/buy:scale-110 transition-transform">COMPRAR AHORA</span>
                 </Button>
+                
+                <a 
+                  href={`https://api.whatsapp.com/send?phone=573019202618&text=Hola!%20Estoy%20interesado%20en%20el%20producto:%20${product.name}%20(Cantidad:%20${quantity})`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full h-14 flex items-center justify-center gap-3 text-[10px] font-black tracking-[0.2em] border border-[#25D366]/30 bg-[#25D366]/5 hover:bg-[#25D366]/10 text-[#25D366] rounded-[1.25rem] transition-all"
+                >
+                  <Phone className="w-4 h-4 fill-[#25D366]" />
+                  CHATEAR POR WHATSAPP
+                </a>
               </div>
 
               <div className="pt-6 mt-2 border-t border-white/5 space-y-4 relative z-10">

@@ -151,7 +151,7 @@ export function Cart() {
                 </div>
 
                 <a 
-                  href={`https://wa.me/1234567890?text=Hola,%20quiero%20comprar%20los%20siguientes%20productos:%0A${items.map(i => `- ${i.quantity}x ${i.name}`).join('%0A')}%0ATotal:%20$${formatPrice(totalPrice)}`}
+                  href={`https://api.whatsapp.com/send?phone=573019202618&text=Hola!%20Vengo%20desde%20la%20página%20web%20y%20quiero%20comprar:%0A${items.map(i => `- ${i.quantity}x ${i.name}`).join('%0A')}%0ATotal:%20$${formatPrice(totalPrice)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full"

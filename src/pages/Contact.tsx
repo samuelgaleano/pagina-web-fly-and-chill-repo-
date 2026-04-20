@@ -115,7 +115,7 @@ export function Contact() {
                   <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-3">Email</h4>
                   <p className="serif text-lg text-gray-400 italic">flyandchill0@gmail.com</p>
                 </a>
-                <a href="https://wa.me/573019202618" target="_blank" rel="noopener noreferrer" className="bg-white/5 rounded-3xl p-10 border border-white/10 text-center group hover:border-brand-primary transition-colors">
+                <a href="https://api.whatsapp.com/send?phone=573019202618&text=Hola%20vengo%20desde%20la%20pagina%20web%20deseo%20comprar%20%3A%20" target="_blank" rel="noopener noreferrer" className="bg-white/5 rounded-3xl p-10 border border-white/10 text-center group hover:border-brand-primary transition-colors">
                   <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-brand-primary mx-auto mb-6 shadow-sm group-hover:bg-brand-primary group-hover:text-brand-black transition-all">
                     <MessageCircle className="w-6 h-6" />
                   </div>

@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AgeVerificationModal } from "@/components/ui/AgeVerificationModal";
+import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { AIAssistant } from "@/components/ui/AIAssistant";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { CartProvider } from "@/context/CartContext";
@@ -29,6 +30,7 @@ export default function App() {
       <ShopProvider>
         <CartProvider>
           <Router>
+            <ScrollToTop />
             <div className="min-h-screen bg-brand-black text-white flex flex-col font-sans">
               <AgeVerificationModal />
               <Navbar />

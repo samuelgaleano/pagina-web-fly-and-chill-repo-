@@ -188,7 +188,7 @@ export function Navbar() {
                     </span>
                   )}
                 </Link>
-                <a href="https://wa.me/573019202618" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-brand-green/20 flex items-center justify-center text-brand-green">
+                <a href="https://api.whatsapp.com/send?phone=573019202618&text=Hola%20vengo%20desde%20la%20pagina%20web%20deseo%20comprar%20%3A%20" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-brand-green/20 flex items-center justify-center text-brand-green">
                   <MessageCircle className="w-5 h-5" />
                 </a>
               </div>

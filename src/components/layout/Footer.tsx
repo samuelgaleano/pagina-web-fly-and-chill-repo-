@@ -119,7 +119,7 @@ export function Footer() {
                 <span className="serif text-lg italic">Bogotá, Colombia</span>
               </li>
               <li className="flex items-center gap-5 text-gray-400 group">
-                <a href="tel:+573019202618" className="flex items-center gap-5 hover:text-white transition-colors">
+                <a href="https://api.whatsapp.com/send?phone=573019202618&text=Hola%20vengo%20desde%20la%20pagina%20web%20deseo%20comprar%20%3A%20" target="_blank" rel="noopener noreferrer" className="flex items-center gap-5 hover:text-white transition-colors">
                   <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-brand-primary transition-colors duration-500">
                     <Phone className="w-4 h-4 text-white group-hover:text-brand-black" />
                   </div>

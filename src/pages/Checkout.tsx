@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
@@ -32,9 +32,15 @@ export function Checkout() {
 
   const [paymentMethod, setPaymentMethod] = useState<"nequi" | "pse_card">("nequi");
   const [orderId, setOrderId] = useState("");
+  const itemsCount = items.length;
 
-  if (items.length === 0 && step !== 3) {
-    navigate("/shop");
+  useEffect(() => {
+    if (itemsCount === 0 && step !== 3) {
+      navigate("/shop");
+    }
+  }, [itemsCount, step, navigate]);
+
+  if (itemsCount === 0 && step !== 3) {
     return null;
   }
 
@@ -99,6 +105,9 @@ export function Checkout() {
     e.preventDefault();
     setIsProcessing(true);
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
     try {
       const orderData = {
         userId: "anonymous",
@@ -122,28 +131,32 @@ export function Checkout() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ orderData }),
+        signal: controller.signal,
+      }).catch(err => {
+        if (err.name === 'AbortError') throw new Error("Tiempo de espera agotado. Reintenta.");
+        console.error("Fetch error:", err);
+        throw new Error("No se pudo conectar con el servidor. Por favor intenta de nuevo.");
       });
 
-      const data = await response.json();
+      clearTimeout(timeoutId);
+      const data = await response.json().catch(() => ({ error: "Error de servidor" }));
 
       if (response.ok) {
         setOrderId(data.orderId);
-        // Update promo code usage count if applicable
-        if (appliedPromo) {
-          await updateDoc(doc(db, "promoCodes", appliedPromo.id), {
-            usageCount: increment(1)
-          });
-        }
-
         setIsProcessing(false);
         setStep(3);
         clearCart();
       } else {
+        alert(data.error || "Hubo un error al procesar tu pedido. Intenta nuevamente.");
         throw new Error(data.error || "Error al crear el pedido");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Checkout error:", error);
       setIsProcessing(false);
+      // Ensure the user sees some feedback
+      if (!window.alert) { // Support if alert is blocked
+        setPromoError(error.message || "Error al procesar el pedido");
+      }
     }
   };
 
@@ -330,8 +343,8 @@ export function Checkout() {
                         </div>
                         {paymentMethod === "nequi" && <CheckCircle2 className="w-5 h-5 text-brand-primary" />}
                       </div>
-                      <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">Transfija</h3>
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Transferencia directa Nequi/Breve</p>
+                      <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">Brev-B</h3>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Transferencia directa Brev-B</p>
                     </button>
 
                     <button
@@ -351,7 +364,7 @@ export function Checkout() {
                         </div>
                         {paymentMethod === "pse_card" && <CheckCircle2 className="w-5 h-5 text-brand-primary" />}
                       </div>
-                      <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">PCI y tarjetas</h3>
+                      <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">PSE/ Tarjeta Crédito - Débito</h3>
                       <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Pasarela de pago segura</p>
                     </button>
                   </div>
@@ -364,14 +377,22 @@ export function Checkout() {
                           <span className="text-[10px] font-black uppercase tracking-widest">Instrucciones de Pago</span>
                         </div>
                         <p className="text-sm text-gray-400 leading-relaxed">
-                          Al confirmar, recibirás un resumen con los datos para la transferencia a Nequi o Breve. Envía el comprobante por WhatsApp para procesar tu envío.
+                          Al confirmar, recibirás un resumen con los datos para la transferencia a Brev-B (@SAG296). Envía el comprobante a nuestro WhatsApp para procesar tu envío:
                         </p>
+                        <a 
+                          href="https://api.whatsapp.com/send?phone=573019202618&text=Hola%20vengo%20desde%20la%20pagina%20web%20deseo%20comprar%20%3A%20"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 text-brand-primary font-black uppercase tracking-widest text-[11px] bg-brand-primary/10 py-2 rounded-lg border border-brand-primary/20 hover:bg-brand-primary hover:text-brand-black transition-all"
+                        >
+                          <Phone className="w-3 h-3" /> +57 301 920 2618
+                        </a>
                       </div>
                     ) : (
                       <div className="space-y-4">
                         <div className="flex items-center gap-4 text-brand-primary">
                           <ShieldCheck className="w-5 h-5" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Pago con Link Directo</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">Pago con Link Directo (PSE / Tarjetas)</span>
                         </div>
                         <p className="text-sm text-gray-400 leading-relaxed">
                           Te enviaremos un link de pago personalizado a tu correo. Un administrador gestionará tu pago de forma manual pronto.
@@ -404,10 +425,32 @@ export function Checkout() {
                 <h2 className="text-5xl font-heading font-black text-white uppercase tracking-tighter mb-6">
                   ¡Pedido Confirmado!
                 </h2>
-                <p className="serif text-2xl text-gray-400 italic mb-12 max-w-md mx-auto leading-relaxed">
-                  Tu pedido #FC-{Math.floor(Math.random() * 100000)} ha sido procesado con éxito. 
+                <p className="serif text-2xl text-gray-400 italic mb-8 max-w-md mx-auto leading-relaxed">
+                  Tu pedido <span className="text-brand-primary font-bold not-italic">#FC-{orderId?.substring(0, 6).toUpperCase()}</span> ha sido procesado con éxito. 
                   Pronto recibirás un correo con los detalles.
                 </p>
+                
+                {paymentMethod === "nequi" && (
+                  <div className="bg-white/5 border border-brand-primary/30 rounded-3xl p-8 mb-12 max-w-md mx-auto">
+                    <h3 className="text-brand-primary font-black uppercase tracking-widest text-xs mb-4">Instrucciones de Pago (Brev-B)</h3>
+                    <p className="text-sm text-gray-400 mb-6 font-sans">Para procesar tu pedido, realiza la transferencia a:</p>
+                    <div className="bg-brand-black/60 rounded-2xl py-4 mb-8 border border-white/5">
+                      <span className="text-3xl font-black text-white tracking-widest">@SAG296</span>
+                    </div>
+                    
+                    <p className="text-sm text-gray-300 font-bold mb-4">Envía el comprobante por WhatsApp:</p>
+                    <a 
+                      href={`https://api.whatsapp.com/send?phone=573019202618&text=Hola!%20Adjunto%20comprobante%20de%20pago%20para%20el%20pedido%20%23FC-${orderId?.substring(0, 6).toUpperCase()}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-3 w-full h-16 bg-[#25D366] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-[#25D366]/20"
+                    >
+                      <Phone className="w-5 h-5 fill-white" />
+                      ENVIAR COMPROBANTE
+                    </a>
+                    <p className="text-2xl font-black text-[#25D366] mt-4 tracking-widest">+57 301 920 2618</p>
+                  </div>
+                )}
                 <div className="bg-brand-black/40 rounded-2xl p-8 mb-12 inline-block text-left border border-white/10">
                   <h4 className="text-[10px] font-bold text-brand-primary uppercase tracking-widest mb-3 flex items-center gap-3">
                     <Truck className="w-4 h-4" /> Estado del Envío

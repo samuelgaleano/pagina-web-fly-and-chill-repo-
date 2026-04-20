@@ -10,6 +10,19 @@ import { formatPrice } from "@/lib/formatters";
 export function Home() {
   const { addToCart } = useCart();
   const { products: shopProducts } = useShop();
+  const [recentlyAdded, setRecentlyAdded] = useState<Set<string>>(new Set());
+  
+  const handleAddToCart = (product: any) => {
+    addToCart(product);
+    setRecentlyAdded(prev => new Set(prev).add(product.id));
+    setTimeout(() => {
+      setRecentlyAdded(prev => {
+        const next = new Set(prev);
+        next.delete(product.id);
+        return next;
+      });
+    }, 2000);
+  };
   
   // Get the first 4 products from the store to display as featured
   const featuredProducts = useMemo(() => shopProducts.slice(0, 4), [shopProducts]);
@@ -63,13 +76,13 @@ export function Home() {
             </div>
 
             <div className="pt-6 md:pt-4">
-              <Link to="/shop/disp-berry-runtz">
+              <Link to="/shop/disp-cinnamon">
                 <Button 
                   size="lg" 
                   className="w-full md:w-auto h-20 md:h-16 px-10 text-lg md:text-xl font-black tracking-tight bg-gradient-buy text-white rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(255,0,0,0.4)] border-none animate-glow"
                 >
                   <ShoppingCart className="w-6 h-6" />
-                  COMPRAR BERRY RUNTZ
+                  COMPRAR CINNAMON BUN
                 </Button>
               </Link>
             </div>
@@ -243,13 +256,17 @@ export function Home() {
                   {/* Quick Action Overlay */}
                   <div className="absolute inset-0 bg-brand-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
                     <Button 
-                      className="bg-brand-primary text-brand-black hover:bg-white rounded-full font-black uppercase tracking-widest px-10 py-7 shadow-[0_0_30px_rgba(118,187,202,0.5)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500"
+                      className={`rounded-full font-black uppercase tracking-widest px-10 py-7 shadow-[0_0_30px_rgba(118,187,202,0.5)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 ${
+                        recentlyAdded.has(product.id) 
+                          ? "bg-white text-brand-black scale-105" 
+                          : "bg-brand-primary text-brand-black hover:bg-white"
+                      }`}
                       onClick={(e) => {
                         e.preventDefault();
-                        addToCart(product);
+                        handleAddToCart(product);
                       }}
                     >
-                      Añadir al Carrito
+                      {recentlyAdded.has(product.id) ? "¡Añadido! ✅" : "Añadir al Carrito"}
                     </Button>
                   </div>
                 </Link>
