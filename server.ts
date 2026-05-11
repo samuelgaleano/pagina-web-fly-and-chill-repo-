@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import admin from "firebase-admin";
 import nodemailer from "nodemailer";
 import fs from "fs";
+import "dotenv/config";
 import { initializeApp as initializeFirebaseApp } from "firebase/app";
 import { 
   getFirestore as getJSFirestore, 
