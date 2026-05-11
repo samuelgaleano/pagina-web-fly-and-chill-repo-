@@ -503,6 +503,26 @@ export function Admin() {
     }
   };
 
+  const handleDeleteOrder = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar Pedido",
+      message: "¿Estás seguro de que quieres eliminar este pedido? Esta acción no se puede deshacer.",
+      confirmText: "Eliminar",
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "orders", id));
+          showNotification("Pedido eliminado correctamente");
+        } catch (error) {
+          handleFirestoreError(error, OperationType.DELETE, `orders/${id}`);
+          showNotification("Error al eliminar el pedido", "error");
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
   return (
     <div className="bg-brand-black min-h-screen pt-32 pb-24 text-white">
       <div className="container mx-auto px-4">
@@ -801,6 +821,25 @@ export function Admin() {
 
                     <Button 
                       onClick={() => {
+                        setConfirmModal({
+                          isOpen: true,
+                          title: "Finalizar Pedido",
+                          message: "¿Deseas marcar este pedido como Finalizado? El estado cambiará a 'Entregado'.",
+                          confirmText: "Finalizar",
+                          type: 'primary',
+                          onConfirm: async () => {
+                            await handleUpdateOrder(order.id, { status: "shipped" });
+                            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                          }
+                        });
+                      }}
+                      className="bg-white/10 text-white hover:bg-white hover:text-brand-black text-[10px] font-black uppercase tracking-widest px-6 py-2 rounded-xl transition-all"
+                    >
+                      Finalizar Pedido
+                    </Button>
+
+                    <Button 
+                      onClick={() => {
                         const message = `Hola ${order.shippingInfo.firstName}, soy del equipo de Fly and Chill. Respecto a tu pedido #${order.id.substring(0, 6).toUpperCase()}...`;
                         window.open(`https://wa.me/${order.shippingInfo.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
                       }}
@@ -809,6 +848,17 @@ export function Admin() {
                     >
                       WhatsApp
                     </Button>
+
+                    <div className="ml-auto">
+                      <Button 
+                        onClick={() => handleDeleteOrder(order.id)}
+                        variant="outline"
+                        className="border-brand-secondary/30 text-brand-secondary hover:bg-brand-secondary hover:text-white text-[10px] font-black uppercase tracking-widest px-6 py-2 rounded-xl transition-all"
+                      >
+                        <Trash2 className="w-3 h-3 mr-2" />
+                        Eliminar
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
