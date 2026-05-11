@@ -76,13 +76,13 @@ export function Home() {
             </div>
 
             <div className="pt-6 md:pt-4">
-              <Link to="/shop/disp-cinnamon">
+              <Link to="/shop/disp-berry-runtz">
                 <Button 
                   size="lg" 
                   className="w-full md:w-auto h-20 md:h-16 px-10 text-lg md:text-xl font-black tracking-tight bg-gradient-buy text-white rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(255,0,0,0.4)] border-none animate-glow"
                 >
                   <ShoppingCart className="w-6 h-6" />
-                  COMPRAR CINNAMON BUN
+                  COMPRAR BONE HEAD
                 </Button>
               </Link>
             </div>

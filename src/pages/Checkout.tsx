@@ -86,10 +86,7 @@ export function Checkout() {
   const discountAmount = calculateDiscount();
   
   const getShippingCost = () => {
-    if (!shippingInfo.city) return 15000;
-    const city = shippingInfo.city.toLowerCase().trim();
-    if (city === "bogota" || city === "bogotá") return 10000;
-    return 15000;
+    return 0; // Se deja pendiente por calcular
   };
 
   const shippingCost = getShippingCost();
@@ -209,7 +206,7 @@ export function Checkout() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
           {/* Main Content */}
-          <div className="lg:col-span-2">
+          <div className={step === 3 ? "lg:col-span-3 max-w-3xl mx-auto w-full" : "lg:col-span-2"}>
             {step === 1 && (
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
@@ -269,9 +266,8 @@ export function Checkout() {
                       />
                     </div>
                     <div className="space-y-3">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Código Postal</label>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Código Postal (Opcional)</label>
                       <input 
-                        required 
                         type="text" 
                         value={shippingInfo.zipCode}
                         onChange={(e) => setShippingInfo({...shippingInfo, zipCode: e.target.value})}
@@ -304,9 +300,32 @@ export function Checkout() {
                   </div>
 
                   <div className="pt-10 border-t border-white/10">
-                    <Button type="submit" size="lg" className="w-full h-20 text-xs font-black uppercase tracking-[0.3em] bg-brand-primary text-brand-black hover:bg-white rounded-2xl transition-all shadow-[0_20px_40px_-15px_rgba(118,187,202,0.3)]">
-                      CONTINUAR AL PAGO
-                    </Button>
+                    <motion.button 
+                      type="submit" 
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      animate={{ 
+                        boxShadow: [
+                          "0 0 0 0px rgba(118,187,202,0)", 
+                          "0 0 0 10px rgba(118,187,202,0.1)", 
+                          "0 0 0 0px rgba(118,187,202,0)"
+                        ] 
+                      }}
+                      transition={{ 
+                        boxShadow: {
+                          repeat: Infinity, 
+                          duration: 2.5,
+                          ease: "easeInOut"
+                        }
+                      }}
+                      className="w-full h-24 text-sm font-black uppercase tracking-[0.3em] bg-brand-primary text-brand-black hover:bg-white rounded-2xl transition-all shadow-[0_20px_40px_-15px_rgba(118,187,202,0.3)] relative overflow-hidden group"
+                    >
+                      <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-12"></div>
+                      <span className="relative z-10 flex flex-col items-center justify-center leading-none">
+                        <span className="text-[9px] font-black opacity-60 tracking-[0.2em] mb-1 group-hover:opacity-100 transition-opacity">PASO SIGUIENTE</span>
+                        <span className="text-xl font-black">CONTINUAR AL PAGO</span>
+                      </span>
+                    </motion.button>
                   </div>
                 </form>
               </motion.div>
@@ -405,9 +424,41 @@ export function Checkout() {
                     <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1 h-16 rounded-2xl text-[10px] font-bold uppercase tracking-widest border-white/10 text-white hover:border-brand-primary">
                       <ArrowLeft className="w-4 h-4 mr-2" /> Atrás
                     </Button>
-                    <Button type="submit" size="lg" className="flex-[2] h-20 text-xs font-black uppercase tracking-[0.3em] bg-brand-primary text-brand-black hover:bg-white rounded-2xl transition-all shadow-[0_20px_40px_-15px_rgba(118,187,202,0.3)]" disabled={isProcessing}>
-                      {isProcessing ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : `CONFIRMAR PAGO $${formatPrice(finalTotal)}`}
-                    </Button>
+                    <motion.button 
+                      type="submit" 
+                      disabled={isProcessing}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      animate={{ 
+                        boxShadow: [
+                          "0 0 0 0px rgba(118,187,202,0)", 
+                          "0 0 0 10px rgba(118,187,202,0.15)", 
+                          "0 0 0 0px rgba(118,187,202,0)"
+                        ] 
+                      }}
+                      transition={{ 
+                        boxShadow: {
+                          repeat: Infinity, 
+                          duration: 2,
+                          ease: "easeInOut"
+                        }
+                      }}
+                      className="flex-[2] h-24 text-sm font-black uppercase tracking-[0.3em] bg-brand-primary text-brand-black hover:bg-white rounded-2xl transition-all shadow-[0_20px_40px_-15px_rgba(118,187,202,0.4)] relative overflow-hidden group"
+                    >
+                      <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-12"></div>
+                      <span className="relative z-10 flex flex-col items-center justify-center leading-none">
+                        {isProcessing ? (
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                        ) : (
+                          <>
+                            <span className="text-lg font-black tracking-[0.1em] mb-0.5 group-hover:scale-105 transition-transform">FINALIZAR COMPRA</span>
+                            <span className="text-[10px] font-bold opacity-60 tracking-widest flex items-center gap-1">
+                              TOTAL: <span className="opacity-40 font-medium">$</span>{formatPrice(finalTotal)}
+                            </span>
+                          </>
+                        )}
+                      </span>
+                    </motion.button>
                   </div>
                 </form>
               </motion.div>
@@ -422,7 +473,7 @@ export function Checkout() {
                 <div className="w-24 h-24 bg-brand-primary/10 rounded-full flex items-center justify-center mx-auto mb-10">
                   <CheckCircle2 className="w-10 h-10 text-brand-primary" />
                 </div>
-                <h2 className="text-5xl font-heading font-black text-white uppercase tracking-tighter mb-6">
+                <h2 className="text-3xl sm:text-5xl font-heading font-black text-white uppercase tracking-tighter mb-6 text-center">
                   ¡Pedido Confirmado!
                 </h2>
                 <p className="serif text-2xl text-gray-400 italic mb-8 max-w-md mx-auto leading-relaxed">
@@ -458,9 +509,11 @@ export function Checkout() {
                   <p className="text-sm text-gray-400 font-medium">Preparando para envío. Entregas en Bogotá en menos de 24 horas según disponibilidad.</p>
                 </div>
                 <br />
-                <Button onClick={() => navigate("/shop")} size="lg" className="h-16 rounded-full px-12 text-xs font-black uppercase tracking-widest bg-brand-primary text-brand-black hover:bg-white transition-all">
-                  Volver a la Colección
-                </Button>
+                <div className="flex justify-center">
+                  <Button onClick={() => navigate("/shop")} size="lg" className="h-16 rounded-full px-12 text-xs font-black uppercase tracking-widest bg-brand-primary text-brand-black hover:bg-white transition-all">
+                    Volver a la Colección
+                  </Button>
+                </div>
               </motion.div>
             )}
           </div>
@@ -488,6 +541,56 @@ export function Checkout() {
                   ))}
                 </div>
 
+                {/* Promo Code Input */}
+                <div className="pt-4 pb-8 border-b border-white/10">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                      <input 
+                        type="text" 
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                        placeholder="CÓDIGO PROMO"
+                        className="w-full bg-brand-black/40 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white focus:ring-1 focus:ring-brand-primary outline-none transition-all"
+                      />
+                    </div>
+                    <motion.button 
+                      type="button"
+                      whileTap={{ scale: 0.95 }}
+                      animate={appliedPromo ? { scale: [1, 1.05, 1], transition: { duration: 0.3 } } : {}}
+                      onClick={handleApplyPromo}
+                      disabled={isApplyingPromo || !promoInput.trim()}
+                      className={`px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        appliedPromo 
+                          ? "bg-green-500/20 text-green-400 border border-green-500/30" 
+                          : "bg-blue-600 text-white hover:bg-gray-500/20 focus:ring-1 focus:ring-blue-400"
+                      }`}
+                    >
+                      {isApplyingPromo ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : appliedPromo ? (
+                        "¡LISTO! ✅"
+                      ) : (
+                        "Aplicar"
+                      )}
+                    </motion.button>
+                  </div>
+                  {promoError && <p className="text-[9px] text-brand-secondary mt-2 font-bold uppercase tracking-widest">{promoError}</p>}
+                  {appliedPromo && (
+                    <div className="flex justify-between items-center mt-3 bg-brand-primary/10 border border-brand-primary/20 rounded-xl px-4 py-2">
+                      <span className="text-[10px] font-black text-brand-primary uppercase tracking-widest">
+                        {appliedPromo.code} Aplicado
+                      </span>
+                      <button 
+                        onClick={() => setAppliedPromo(null)}
+                        className="text-brand-primary hover:text-white"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-4 font-sans text-sm border-t border-white/10 pt-8">
                   <div className="flex justify-between text-gray-400 font-medium">
                     <span>Subtotal</span>
@@ -497,10 +600,10 @@ export function Checkout() {
                     <div className="flex flex-col">
                       <span>Envío</span>
                       <span className="text-[8px] uppercase tracking-widest opacity-50">
-                        {shippingInfo.city ? (shippingInfo.city.toLowerCase().trim() === "bogota" || shippingInfo.city.toLowerCase().trim() === "bogotá" ? "Tarifa Bogotá" : "Tarifa Nacional") : "Calculando..."}
+                        POR CALCULAR
                       </span>
                     </div>
-                    <span className="text-brand-primary">${formatPrice(shippingCost)}</span>
+                    <span className="text-brand-primary text-[10px] font-bold">—</span>
                   </div>
                   <div className="flex justify-between text-gray-400 font-medium border-b border-white/5 pb-4">
                     <div className="flex flex-col">
@@ -508,44 +611,6 @@ export function Checkout() {
                       <span className="text-[8px] uppercase tracking-widest opacity-50">Autorización de envío comunidad</span>
                     </div>
                     <span className="text-brand-primary">${formatPrice(subscriptionFee)}</span>
-                  </div>
-                  
-                  {/* Promo Code Input */}
-                  <div className="pt-4">
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                        <input 
-                          type="text" 
-                          value={promoInput}
-                          onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                          placeholder="CÓDIGO PROMO"
-                          className="w-full bg-brand-black/40 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white focus:ring-1 focus:ring-brand-primary outline-none transition-all"
-                        />
-                      </div>
-                      <Button 
-                        type="button"
-                        onClick={handleApplyPromo}
-                        disabled={isApplyingPromo || !promoInput.trim()}
-                        className="bg-white/5 border border-white/10 hover:bg-brand-primary hover:text-brand-black px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-                      >
-                        {isApplyingPromo ? <Loader2 className="w-3 h-3 animate-spin" /> : "Aplicar"}
-                      </Button>
-                    </div>
-                    {promoError && <p className="text-[9px] text-brand-secondary mt-2 font-bold uppercase tracking-widest">{promoError}</p>}
-                    {appliedPromo && (
-                      <div className="flex justify-between items-center mt-3 bg-brand-primary/10 border border-brand-primary/20 rounded-xl px-4 py-2">
-                        <span className="text-[10px] font-black text-brand-primary uppercase tracking-widest">
-                          {appliedPromo.code} Aplicado
-                        </span>
-                        <button 
-                          onClick={() => setAppliedPromo(null)}
-                          className="text-brand-primary hover:text-white"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    )}
                   </div>
 
                   {appliedPromo && (

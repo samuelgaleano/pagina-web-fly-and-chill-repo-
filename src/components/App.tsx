@@ -8,7 +8,6 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AgeVerificationModal } from "@/components/ui/AgeVerificationModal";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
-import { AIAssistant } from "@/components/ui/AIAssistant";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { CartProvider } from "@/context/CartContext";
 import { ShopProvider } from "@/context/ShopContext";
@@ -50,7 +49,6 @@ export default function App() {
               </main>
 
               <Footer />
-              <AIAssistant />
               <WhatsAppButton />
             </div>
           </Router>

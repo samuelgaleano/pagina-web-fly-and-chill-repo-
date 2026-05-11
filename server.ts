@@ -312,7 +312,7 @@ async function startServer() {
 
       // 3. Notify Admin if it's a PCI/Card payment
       if (paymentMethod === "pse_card") {
-        const adminEmails = ["samuel.galeano.alvis@gmail.com", "danysanty451@gmail.com"].join(", ");
+        const adminEmails = ["flyandchill0@gmail.com"].join(", ");
         const adminMailOptions = {
           from: fromEmail,
           to: adminEmails,

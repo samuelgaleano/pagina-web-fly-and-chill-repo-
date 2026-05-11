@@ -47,9 +47,16 @@ export function Shop() {
   }, [maxPrice]);
 
   const seedDatabase = async () => {
-    if (!confirm("¿Estás seguro de que quieres poblar la base de datos con los productos iniciales?")) return;
+    if (!confirm("¿Estás seguro de que quieres sincronizar el catálogo? Esto eliminará todos los productos actuales de la base de datos y los reemplazará con los oficiales.")) return;
     
     const batch = writeBatch(db);
+    
+    // Delete current products in view
+    products.forEach(p => {
+      batch.delete(doc(db, "products", p.id));
+    });
+
+    // Add initial products
     initialProducts.forEach(product => {
       const docRef = doc(collection(db, "products"), product.id);
       batch.set(docRef, product);
@@ -57,7 +64,7 @@ export function Shop() {
 
     try {
       await batch.commit();
-      alert("Base de datos poblada con éxito.");
+      alert("Catálogo sincronizado con éxito.");
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, "products");
     }
@@ -319,7 +326,7 @@ export function Shop() {
                         <img 
                           src={product.images[0]} 
                           alt={product.name} 
-                          className="object-contain h-full w-full p-8 group-hover:scale-110 transition-transform duration-700"
+                          className="object-contain h-full w-full p-2 md:p-3 group-hover:scale-110 transition-transform duration-700"
                           referrerPolicy="no-referrer"
                         />
                       </Link>
@@ -336,7 +343,7 @@ export function Shop() {
                       <div className="absolute inset-0 bg-brand-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px] z-20">
                         <Link to={`/shop/${product.id}`} className="absolute inset-0 z-0" />
                         <Button 
-                          className={`relative z-10 rounded-full font-black uppercase tracking-widest px-10 py-7 shadow-[0_0_30px_rgba(118,187,202,0.5)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 ${
+                          className={`relative z-10 rounded-full font-black uppercase tracking-[0.2em] px-5 py-3.5 text-[9px] sm:text-[10px] shadow-[0_0_30px_rgba(118,187,202,0.4)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 ${
                             recentlyAdded.has(product.id) 
                               ? "bg-white text-brand-black scale-105" 
                               : "bg-brand-primary text-brand-black hover:bg-white"
@@ -348,7 +355,7 @@ export function Shop() {
                             handleAddToCart(product);
                           }}
                         >
-                          {product.stock === 0 ? "Agotado" : (recentlyAdded.has(product.id) ? "¡Añadido! ✅" : "Añadir al Carrito")}
+                          {product.stock === 0 ? "AGOTADO" : (recentlyAdded.has(product.id) ? "¡LISTO! ✅" : "AÑADIR AL CARRITO")}
                         </Button>
                       </div>
                     </div>

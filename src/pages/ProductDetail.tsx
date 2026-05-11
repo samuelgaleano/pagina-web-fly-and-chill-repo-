@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useShop } from "@/context/ShopContext";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
-import { Star, ArrowLeft, ShieldCheck, Truck, Droplet, Minus, Plus, Loader2, Phone } from "lucide-react";
+import { Star, ArrowLeft, ShieldCheck, Truck, Droplet, Minus, Plus, Loader2, Phone, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatPrice } from "@/lib/formatters";
 
 export function ProductDetail() {
@@ -47,183 +47,220 @@ export function ProductDetail() {
   const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 3);
 
   return (
-    <div className="bg-brand-black min-h-screen pt-40 pb-24 text-white">
-      <div className="container mx-auto px-6">
-        <Link to="/shop" className="inline-flex items-center gap-3 text-gray-400 hover:text-brand-primary transition-colors mb-12 text-[10px] font-bold uppercase tracking-[0.3em]">
-          <ArrowLeft className="w-4 h-4" /> Volver al catálogo
+    <div className="bg-brand-black min-h-screen pt-20 pb-16 text-white overflow-x-hidden">
+      <div className="container mx-auto px-5 max-w-7xl">
+        <Link to="/shop" className="inline-flex items-center gap-2 text-gray-500 hover:text-brand-primary transition-colors mb-3 text-[9px] font-black uppercase tracking-[0.2em] opacity-50 hover:opacity-100">
+          <ArrowLeft className="w-3 h-3" /> Volver
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 mb-20">
-          {/* Image Gallery - 7 columns on desktop */}
-          <div className="lg:col-span-7 space-y-6">
-            <motion.div 
-              key={activeImageIndex}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="aspect-square bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden relative group"
-            >
-              <img 
-                src={product.images[activeImageIndex]} 
-                alt={product.name} 
-                className="w-full h-full object-contain p-6 md:p-12 group-hover:scale-105 transition-transform duration-1000"
-                referrerPolicy="no-referrer"
-              />
-            </motion.div>
-            
-            {/* Thumbnails - Horizontal scroll on mobile */}
-            <div className="flex lg:grid lg:grid-cols-6 gap-4 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 no-scrollbar">
-              {product.images.map((img, i) => (
-                <button 
-                  key={i} 
-                  onClick={() => setActiveImageIndex(i)}
-                  className={`flex-shrink-0 w-20 h-20 lg:w-auto lg:h-auto aspect-square bg-white/5 rounded-2xl border transition-all ${
-                    activeImageIndex === i ? "border-brand-primary ring-1 ring-brand-primary" : "border-white/10 opacity-50 hover:opacity-100"
-                  }`}
-                >
-                  <img src={img} alt="" className="w-full h-full object-cover rounded-xl" referrerPolicy="no-referrer" />
-                </button>
-              ))}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 mb-12">
+          <div className="lg:col-span-7">
+            <div className="relative group aspect-[4/5] md:aspect-square bg-white/5 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden shadow-brand-primary/5">
+              <motion.div 
+                key={activeImageIndex}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="w-full h-full flex items-center justify-center p-3 md:p-8"
+              >
+                <motion.img 
+                  src={product.images[activeImageIndex]} 
+                  alt={product.name} 
+                  className="w-full h-full object-contain cursor-grab active:cursor-grabbing"
+                  referrerPolicy="no-referrer"
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.1}
+                  onDragEnd={(_, info) => {
+                    const swipeThreshold = 40;
+                    if (info.offset.x > swipeThreshold) {
+                      setActiveImageIndex((prev) => (prev === 0 ? product.images.length - 1 : prev - 1));
+                    } else if (info.offset.x < -swipeThreshold) {
+                      setActiveImageIndex((prev) => (prev === product.images.length - 1 ? 0 : prev + 1));
+                    }
+                  }}
+                />
+              </motion.div>
+
+              {/* Navigation Arrows */}
+              {product.images.length > 1 && (
+                <>
+                  <button 
+                    onClick={() => setActiveImageIndex((prev) => (prev === 0 ? product.images.length - 1 : prev - 1))}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white transition-all opacity-0 group-hover:opacity-100 hidden md:flex z-20"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button 
+                    onClick={() => setActiveImageIndex((prev) => (prev === product.images.length - 1 ? 0 : prev + 1))}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white transition-all opacity-0 group-hover:opacity-100 hidden md:flex z-20"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </>
+              )}
+
+              {/* Mobile Arrows (Visible by default) */}
+              {product.images.length > 1 && (
+                <div className="absolute inset-x-0 bottom-10 flex items-center justify-between px-6 md:hidden z-20 pointer-events-none">
+                  <button 
+                    onClick={() => setActiveImageIndex((prev) => (prev === 0 ? product.images.length - 1 : prev - 1))}
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white pointer-events-auto"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={() => setActiveImageIndex((prev) => (prev === product.images.length - 1 ? 0 : prev + 1))}
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white pointer-events-auto"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Progress Indicators */}
+              {product.images.length > 1 && (
+                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2.5 z-10">
+                  {product.images.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActiveImageIndex(i)}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        activeImageIndex === i ? "w-8 bg-brand-primary" : "w-1.5 bg-white/20 hover:bg-white/40"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Product Info - 5 columns on desktop */}
-          <div className="lg:col-span-5 flex flex-col justify-center">
-            <div className="flex items-center gap-3 mb-6">
+          {/* Product Info */}
+          <div className="lg:col-span-5 flex flex-col pt-0 lg:pt-4">
+            <div className="flex items-center gap-3 mb-3">
               <span className="text-brand-primary text-[10px] font-black uppercase tracking-[0.4em]">{product.category}</span>
               <span className="w-1 h-1 rounded-full bg-white/20"></span>
               <span className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.3em]">{product.flavors.join(" / ")}</span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-black text-white uppercase tracking-tighter leading-[0.9] mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-7xl font-heading font-black text-white uppercase tracking-tighter leading-[0.8] mb-6">
               {product.name}
             </h1>
             
-            <div className="flex items-center gap-4 mb-8">
+            <div className="flex items-center gap-4 mb-6 opacity-70">
               <div className="flex items-center text-brand-primary">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className={`w-4 h-4 ${i < Math.floor(product.rating) ? "fill-current" : "opacity-30"}`} />
+                  <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating) ? "fill-current" : "opacity-30"}`} />
                 ))}
               </div>
-              <span className="text-gray-400 text-[10px] font-black uppercase tracking-widest">({product.rating} / 5.0)</span>
+              <span className="text-gray-400 text-[9px] font-black uppercase tracking-widest">({product.rating} / 5.0)</span>
             </div>
             
-            <div className="serif text-4xl md:text-5xl italic text-brand-primary mb-10 flex items-baseline gap-2">
-              <span className="text-sm not-italic font-black uppercase tracking-widest text-white/40 mr-2">Precio</span>
-              ${formatPrice(product.price)}
-            </div>
-            
-            {/* Quick Features */}
-            <div className="grid grid-cols-2 gap-4 mb-10">
-              <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-brand-primary/10 flex items-center justify-center shrink-0">
-                  <Droplet className="w-5 h-5 text-brand-primary" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Pureza</span>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white">Premium</span>
-                </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+              <div className="serif text-4xl md:text-5xl lg:text-6xl italic text-brand-primary flex items-baseline gap-2">
+                <span className="text-[10px] not-italic font-black uppercase tracking-[0.3em] text-white/30 mr-2">Valor</span>
+                ${formatPrice(product.price)}
               </div>
-              <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-brand-primary/10 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-5 h-5 text-brand-primary" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Calidad</span>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white">Orgánico</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Purchase Controls */}
-            <div className="space-y-6 bg-white/5 p-8 rounded-[2.5rem] border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden group/purchase">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover/purchase:bg-brand-primary/10 transition-colors" />
               
-              <div className="flex items-center justify-between relative z-10">
-                <div className="flex items-center bg-brand-black/40 border border-white/10 rounded-full p-1.5 shadow-inner">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl p-1 shrink-0 h-14">
                   <button 
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-brand-primary hover:bg-white/5 rounded-full transition-all"
+                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-brand-primary transition-colors"
                   >
-                    <Minus className="w-4 h-4" />
+                    <Minus className="w-3 h-3" />
                   </button>
-                  <span className="w-12 text-center font-black text-lg text-white">{quantity}</span>
+                  <span className="w-8 text-center font-black text-lg text-white">{quantity}</span>
                   <button 
                     onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                    className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-brand-primary hover:bg-white/5 rounded-full transition-all"
+                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-brand-primary transition-colors"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-3 h-3" />
                   </button>
                 </div>
-                <div className="text-right">
-                  <div className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-500 mb-1">Disponibilidad</div>
-                  <div className="text-[10px] font-black uppercase tracking-widest">
-                    {product.stock > 0 ? (
-                      <span className="text-brand-primary flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
-                        {product.stock} EN STOCK
+                
+                {product.stock > 0 ? (
+                  <div className="flex flex-col gap-1 pr-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${product.stock <= 5 ? "bg-brand-secondary" : "bg-brand-primary"} animate-pulse`} />
+                      <span className="text-white text-[9px] font-black uppercase tracking-[0.2em]">
+                        {product.stock <= 5 ? "POCAS UNIDADES" : "DISPONIBLE"}
                       </span>
-                    ) : (
-                      <span className="text-brand-secondary">AGOTADO</span>
-                    )}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="px-4 py-2 rounded-xl border border-brand-secondary/30 bg-brand-secondary/5">
+                    <span className="text-brand-secondary text-[9px] font-black uppercase tracking-[0.2em]">AGOTADO</span>
+                  </div>
+                )}
               </div>
+            </div>
 
-              <div className="flex flex-col gap-4 relative z-10">
-                <Button 
-                  size="lg" 
-                  className={`w-full h-20 text-xs font-black tracking-[0.3em] rounded-[1.5rem] transition-all shadow-[0_20px_40px_-15px_rgba(118,187,202,0.3)] hover:shadow-[0_25px_50px_-12px_rgba(118,187,202,0.4)] active:scale-95 ${
-                    isAdded 
-                      ? "bg-white text-brand-black" 
-                      : "bg-brand-primary text-brand-black hover:bg-white"
-                  }`}
-                  disabled={product.stock === 0}
-                  onClick={handleAddToCart}
-                >
-                  {product.stock === 0 ? "AGOTADO" : (isAdded ? "¡AÑADIDO! ✅" : "AÑADIR AL CARRITO")}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="w-full h-16 text-[10px] font-black tracking-[0.2em] border-white/10 hover:border-brand-primary text-white hover:text-brand-primary rounded-[1.25rem] transition-all hover:bg-brand-primary/5 group/buy"
-                  disabled={product.stock === 0}
-                  onClick={() => {
-                    addToCart(product, quantity);
-                    navigate("/checkout");
-                  }}
-                >
-                  <span className="group-hover/buy:scale-110 transition-transform">COMPRAR AHORA</span>
-                </Button>
-                
-                <a 
-                  href={`https://api.whatsapp.com/send?phone=573019202618&text=Hola!%20Estoy%20interesado%20en%20el%20producto:%20${product.name}%20(Cantidad:%20${quantity})`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full h-14 flex items-center justify-center gap-3 text-[10px] font-black tracking-[0.2em] border border-[#25D366]/30 bg-[#25D366]/5 hover:bg-[#25D366]/10 text-[#25D366] rounded-[1.25rem] transition-all"
-                >
-                  <Phone className="w-4 h-4 fill-[#25D366]" />
-                  CHATEAR POR WHATSAPP
-                </a>
-              </div>
-
-              <div className="pt-6 mt-2 border-t border-white/5 space-y-4 relative z-10">
-                <div className="flex items-center justify-center gap-8">
-                  <div className="flex items-center gap-2">
-                    <Truck className="w-4 h-4 text-brand-primary/60" />
-                    <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">Envío Gratis</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-brand-primary/60" />
-                    <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">Pago Seguro</span>
-                  </div>
+            {/* Main Purchase Section - Consolidated Card */}
+            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 mb-8 relative group/purchase overflow-hidden transition-all hover:bg-white/[0.07] hover:border-white/20">
+              {/* Decorative background element */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover/purchase:bg-brand-primary/10 transition-all duration-700" />
+              
+              <div className="relative z-10 space-y-8">
+                {/* Actions Row */}
+                <div className="flex flex-col gap-4">
+                  <Button 
+                    size="lg" 
+                    className={`w-full h-14 text-[11px] font-black tracking-[0.3em] rounded-2xl transition-all shadow-xl active:scale-95 ${
+                      isAdded 
+                        ? "bg-white text-brand-black" 
+                        : "bg-brand-primary text-brand-black hover:bg-white"
+                    }`}
+                    disabled={product.stock === 0}
+                    onClick={handleAddToCart}
+                  >
+                    {product.stock === 0 ? "AGOTADO" : (isAdded ? "¡AÑADIDO! ✅" : "AÑADIR AL CARRITO")}
+                  </Button>
                 </div>
-                
-                {/* Payment Icons Placeholder */}
-                <div className="flex justify-center gap-3 opacity-30 grayscale">
-                  <div className="w-8 h-5 bg-white/20 rounded-sm" />
-                  <div className="w-8 h-5 bg-white/20 rounded-sm" />
-                  <div className="w-8 h-5 bg-white/20 rounded-sm" />
-                  <div className="w-8 h-5 bg-white/20 rounded-sm" />
+
+                {/* Secondary Actions Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <Button 
+                    variant="outline" 
+                    className="h-14 text-[10px] font-black tracking-[0.2em] border-white/10 hover:border-brand-primary text-white hover:text-brand-primary rounded-2xl transition-all hover:bg-white/5"
+                    disabled={product.stock === 0}
+                    onClick={() => {
+                      addToCart(product, quantity);
+                      navigate("/checkout");
+                    }}
+                  >
+                    COMPRAR AHORA
+                  </Button>
+                  <a 
+                    href={`https://api.whatsapp.com/send?phone=573019202618&text=Hola!%20Estoy%20interesado%20en%20el%20producto:%20${product.name}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-14 flex items-center justify-center gap-3 text-[10px] font-black tracking-[0.15em] border border-[#25D366]/30 bg-[#25D366]/5 hover:bg-[#25D366]/10 text-[#25D366] rounded-2xl transition-all"
+                  >
+                    <Phone className="w-4 h-4 fill-[#25D366]" />
+                    WHATSAPP
+                  </a>
+                </div>
+
+                {/* Shipping & Security Info - Integrated at bottom of card */}
+                <div className="pt-8 border-t border-white/5">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-brand-primary/10 flex items-center justify-center">
+                        <Truck className="w-4 h-4 text-brand-primary/80" />
+                      </div>
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Envío Gratis</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-brand-primary/10 flex items-center justify-center">
+                        <ShieldCheck className="w-4 h-4 text-brand-primary/80" />
+                      </div>
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Pago Seguro</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

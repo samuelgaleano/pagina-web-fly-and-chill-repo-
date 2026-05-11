@@ -57,7 +57,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       setIsAuthReady(true);
       if (user) {
         // Simple admin check based on email for now
-        const ADMIN_EMAILS = ["samuel.galeano.alvis@gmail.com", "danysanty451@gmail.com"];
+        const ADMIN_EMAILS = ["flyandchill0@gmail.com", "danysanty451@gmail.com"];
         setIsAdmin(user.email ? ADMIN_EMAILS.includes(user.email) : false);
       } else {
         setIsAdmin(false);

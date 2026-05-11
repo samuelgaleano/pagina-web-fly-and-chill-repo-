@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useShop } from "@/context/ShopContext";
 import { Button } from "@/components/ui/Button";
 import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
-import { collection, doc, deleteDoc, addDoc, updateDoc, setDoc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, doc, deleteDoc, addDoc, updateDoc, setDoc, onSnapshot, query, orderBy, writeBatch } from "firebase/firestore";
 import { Plus, Edit2, Trash2, X, Save, Package, Image as ImageIcon, Tag, Beaker, DollarSign, FileText, Upload, Loader2, Ticket, LayoutDashboard, Users } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { formatPrice } from "@/lib/formatters";
@@ -38,6 +38,7 @@ export function Admin() {
 
   const [uploading, setUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageUrlInput, setImageUrlInput] = useState("");
 
@@ -137,6 +138,43 @@ export function Admin() {
       </div>
     );
   }
+
+  const handleSyncWithCatalog = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Sincronizar con Código",
+      message: "Esta acción ELIMINARÁ todos los productos actuales en la base de datos y los reemplazará con los productos definidos en el código (Catálogo Oficial). ¿Deseas continuar?",
+      confirmText: "Sincronizar",
+      type: 'danger',
+      onConfirm: async () => {
+        setIsSyncing(true);
+        try {
+          const { products: staticProducts } = await import("@/data/products");
+          const batch = writeBatch(db);
+          
+          // Delete existing products from the current state (which comes from Firestore)
+          products.forEach(p => {
+            batch.delete(doc(db, "products", p.id));
+          });
+          
+          // Add static products
+          staticProducts.forEach(p => {
+            const docRef = doc(collection(db, "products"), p.id);
+            batch.set(docRef, p);
+          });
+          
+          await batch.commit();
+          showNotification("Catálogo sincronizado correctamente");
+        } catch (error) {
+          console.error("Sync error:", error);
+          showNotification("Error al sincronizar el catálogo", "error");
+        } finally {
+          setIsSyncing(false);
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        }
+      }
+    });
+  };
 
   const handleEdit = (product: Product) => {
     // Create a deep copy to ensure editing one doesn't affect others in the UI
@@ -509,13 +547,24 @@ export function Admin() {
             </div>
 
             {activeTab === "products" ? (
-              <Button 
-                onClick={handleAddNew}
-                className="bg-brand-primary text-brand-black hover:bg-white rounded-2xl px-8 py-6 text-xs font-black uppercase tracking-widest flex items-center gap-3"
-              >
-                <Plus className="w-4 h-4" />
-                Nuevo Producto
-              </Button>
+              <div className="flex gap-4">
+                <Button 
+                  onClick={handleSyncWithCatalog}
+                  disabled={isSyncing}
+                  variant="outline"
+                  className="border-brand-primary/30 text-brand-primary/70 hover:text-brand-primary hover:border-brand-primary rounded-2xl px-6 py-6 text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all"
+                >
+                  {isSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Sincronizar Catálogo
+                </Button>
+                <Button 
+                  onClick={handleAddNew}
+                  className="bg-brand-primary text-brand-black hover:bg-white rounded-2xl px-8 py-6 text-xs font-black uppercase tracking-widest flex items-center gap-3"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nuevo Producto
+                </Button>
+              </div>
             ) : activeTab === "promoCodes" ? (
               <Button 
                 onClick={handleAddNewPromo}
