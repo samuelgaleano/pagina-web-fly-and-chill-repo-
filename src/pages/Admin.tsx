@@ -741,7 +741,7 @@ export function Admin() {
                       <div>
                         <div className="flex items-center gap-3 mb-1">
                           <h3 className="text-xl font-heading font-black uppercase tracking-tighter">
-                            Pedido #{order.id.substring(0, 6).toUpperCase()}
+                            Pedido {order.serial || `#${order.id.substring(0, 6).toUpperCase()}`}
                           </h3>
                           <span className={`text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
                             order.status === 'paid' ? 'bg-green-500/10 border-green-500/20 text-green-500' :
@@ -751,6 +751,15 @@ export function Admin() {
                           }`}>
                             {order.status}
                           </span>
+                          {order.paymentStatus && (
+                            <span className={`text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
+                              order.paymentStatus === 'APPROVED' ? 'bg-green-500/10 border-green-500/20 text-green-500' :
+                              order.paymentStatus === 'DECLINED' || order.paymentStatus === 'ERROR' || order.paymentStatus === 'VOIDED' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
+                              'bg-yellow-500/10 border-yellow-500/20 text-yellow-500'
+                            }`}>
+                              Wompi: {order.paymentStatus}
+                            </span>
+                          )}
                         </div>
                         <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">
                           {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString() : "Reciente"}
@@ -840,7 +849,7 @@ export function Admin() {
 
                     <Button 
                       onClick={() => {
-                        const message = `Hola ${order.shippingInfo.firstName}, soy del equipo de Fly and Chill. Respecto a tu pedido #${order.id.substring(0, 6).toUpperCase()}...`;
+                        const message = `Hola ${order.shippingInfo.firstName}, soy del equipo de Fly and Chill. Respecto a tu pedido ${order.serial || `#${order.id.substring(0, 6).toUpperCase()}`}...`;
                         window.open(`https://wa.me/${order.shippingInfo.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
                       }}
                       variant="outline"

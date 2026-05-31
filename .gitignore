@@ -7,3 +7,7 @@ coverage/
 .env*
 !.env.example
 *.mp4
+
+# Claude Code skill artifacts
+.agents/
+skills-lock.json
