@@ -1,5 +1,6 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
+// NOTA: Vite se importa de forma dinámica SOLO en modo desarrollo (más abajo).
+// Así el proceso de producción nunca carga Vite/esbuild/rollup en memoria.
 import path from "path";
 import { fileURLToPath } from "url";
 import admin from "firebase-admin";
@@ -354,9 +355,11 @@ async function startServer() {
 
   console.log("Proceeding with server setup...");
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
-  app.use(express.json());
+  // El webhook de Wompi rara vez supera unos KB; limitar el body protege
+  // memoria/CPU frente a payloads abusivos en una instancia pequeña.
+  app.use(express.json({ limit: "1mb" }));
 
   // Health check API
   app.get("/api/health", (req, res) => {
@@ -577,26 +580,64 @@ async function startServer() {
     }
   });
 
-  // Vite middleware for development
+  // ============================================================
+  // Frontend serving
+  //  - DEV: Vite middleware (HMR) — Vite se importa dinámicamente
+  //    aquí para que el bundle de PRODUCCIÓN nunca lo cargue.
+  //  - PROD: se sirven los archivos estáticos ya compilados (dist/),
+  //    con cache agresivo en /assets (hashed) y sin-cache en el HTML.
+  // ============================================================
   if (process.env.NODE_ENV !== "production") {
     console.log("Initializing Vite dev server...");
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-    console.log("Vite middleware attached.");
+    console.log("Vite middleware attached (DEV mode).");
   } else {
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+    if (!fs.existsSync(path.join(distPath, "index.html"))) {
+      console.error(`⚠️  No se encontró ${path.join(distPath, "index.html")}. Ejecuta "npm run build" antes de arrancar en producción.`);
+    }
+    const indexHtml = path.join(distPath, "index.html");
+
+    // Archivos con hash en el nombre → cache inmutable de 1 año.
+    app.use("/assets", express.static(path.join(distPath, "assets"), {
+      immutable: true,
+      maxAge: "1y",
+    }));
+    // Resto de estáticos (favicon, imágenes públicas, etc.)
+    app.use(express.static(distPath, { maxAge: "1h", index: false }));
+
+    // SPA fallback — nunca cachear el HTML para que los despliegues
+    // nuevos se vean de inmediato.
+    app.get("*", (_req, res) => {
+      res.setHeader("Cache-Control", "no-cache");
+      res.sendFile(indexHtml);
     });
+    console.log("Serving static build from dist/ (PROD mode).");
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT} (Wompi ${WOMPI_ENV}, Firestore ${useAdmin ? "admin" : "client"})`);
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT} (${process.env.NODE_ENV === "production" ? "PROD" : "DEV"}, Wompi ${WOMPI_ENV}, Firestore ${useAdmin ? "admin" : "client"})`);
   });
+
+  // Apagado ordenado: PM2 envía SIGINT/SIGTERM en cada redeploy/reload.
+  // Cerrar el servidor con gracia evita peticiones cortadas (p. ej. un
+  // webhook de Wompi a medio procesar).
+  const shutdown = (signal: string) => {
+    console.log(`${signal} recibido — cerrando servidor con gracia...`);
+    server.close(() => {
+      console.log("Servidor cerrado. Saliendo.");
+      process.exit(0);
+    });
+    // Salvavidas: forzar salida si algo se cuelga.
+    setTimeout(() => process.exit(0), 10000).unref();
+  };
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
 startServer();
