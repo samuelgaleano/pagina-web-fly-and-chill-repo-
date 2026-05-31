@@ -47,6 +47,20 @@ export function Checkout() {
   });
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentChannel>("CARD");
+
+  // Billing address (defaults to the same as the shipping address).
+  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
+  const [billingInfo, setBillingInfo] = useState({
+    firstName: "",
+    lastName: "",
+    documentType: "CC",
+    documentNumber: "",
+    address: "",
+    city: "",
+    zipCode: "",
+    phone: ""
+  });
+
   const itemsCount = items.length;
 
   useEffect(() => {
@@ -123,6 +137,12 @@ export function Checkout() {
       `customer-data:phone-number=${encodeURIComponent(phone)}`,
       `customer-data:legal-id=${encodeURIComponent(shippingInfo.documentNumber)}`,
       `customer-data:legal-id-type=${encodeURIComponent(shippingInfo.documentType)}`,
+      // Pre-fill the shipping address inside Wompi's checkout.
+      `shipping-address:address-line-1=${encodeURIComponent(shippingInfo.address)}`,
+      `shipping-address:country=CO`,
+      `shipping-address:region=${encodeURIComponent(shippingInfo.city)}`,
+      `shipping-address:city=${encodeURIComponent(shippingInfo.city)}`,
+      `shipping-address:phone-number=${encodeURIComponent(phone)}`,
     ];
     window.location.href = `${WOMPI_CHECKOUT_URL}?${parts.join("&")}`;
   };
@@ -149,6 +169,19 @@ export function Checkout() {
         discountAmount: discountAmount,
         promoCode: appliedPromo?.code || null,
         shippingInfo,
+        billingSameAsShipping,
+        billingInfo: billingSameAsShipping
+          ? {
+              firstName: shippingInfo.firstName,
+              lastName: shippingInfo.lastName,
+              documentType: shippingInfo.documentType,
+              documentNumber: shippingInfo.documentNumber,
+              address: shippingInfo.address,
+              city: shippingInfo.city,
+              zipCode: shippingInfo.zipCode,
+              phone: shippingInfo.phone,
+            }
+          : billingInfo,
         paymentMethod,
       };
 
@@ -375,9 +408,72 @@ export function Checkout() {
                       <span className="text-[10px] font-black uppercase tracking-widest">Pago 100% Seguro</span>
                     </div>
                     <p className="text-sm text-gray-400 leading-relaxed">
-                      Al continuar serás dirigido a la pasarela segura de <strong className="text-white">Wompi</strong> para completar tu pago por <strong className="text-brand-primary">${formatPrice(finalTotal)} COP</strong>.
+                      Se te redirigirá a <strong className="text-white">Wompi</strong> para que completes la compra por <strong className="text-brand-primary">${formatPrice(finalTotal)} COP</strong> con el método seleccionado.
                       Tus datos financieros son procesados directamente por Wompi y nunca se almacenan en nuestra tienda.
                     </p>
+                  </div>
+
+                  {/* Dirección de Facturación */}
+                  <div className="space-y-4">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Dirección de Facturación</h3>
+
+                    <button type="button" onClick={() => setBillingSameAsShipping(true)}
+                      className={`w-full flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left ${
+                        billingSameAsShipping ? "bg-brand-primary/10 border-brand-primary" : "bg-white/5 border-white/10 hover:border-white/20"
+                      }`}>
+                      <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${billingSameAsShipping ? "border-brand-primary" : "border-white/30"}`}>
+                        {billingSameAsShipping && <span className="w-2.5 h-2.5 rounded-full bg-brand-primary" />}
+                      </span>
+                      <span className="text-sm font-bold text-white">La misma dirección de envío</span>
+                    </button>
+
+                    <button type="button" onClick={() => setBillingSameAsShipping(false)}
+                      className={`w-full flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left ${
+                        !billingSameAsShipping ? "bg-brand-primary/10 border-brand-primary" : "bg-white/5 border-white/10 hover:border-white/20"
+                      }`}>
+                      <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${!billingSameAsShipping ? "border-brand-primary" : "border-white/30"}`}>
+                        {!billingSameAsShipping && <span className="w-2.5 h-2.5 rounded-full bg-brand-primary" />}
+                      </span>
+                      <span className="text-sm font-bold text-white">Usar una dirección de facturación distinta</span>
+                    </button>
+
+                    {!billingSameAsShipping && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+                        className="space-y-6 pt-2 overflow-hidden">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <input required type="text" placeholder="Nombre" value={billingInfo.firstName}
+                            onChange={(e) => setBillingInfo({ ...billingInfo, firstName: e.target.value })}
+                            className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none placeholder:text-gray-600" />
+                          <input required type="text" placeholder="Apellidos" value={billingInfo.lastName}
+                            onChange={(e) => setBillingInfo({ ...billingInfo, lastName: e.target.value })}
+                            className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none placeholder:text-gray-600" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <select value={billingInfo.documentType}
+                            onChange={(e) => setBillingInfo({ ...billingInfo, documentType: e.target.value })}
+                            className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none appearance-none">
+                            {DOC_TYPES.map(t => <option key={t} value={t} className="bg-brand-black">{t}</option>)}
+                          </select>
+                          <input required type="text" inputMode="numeric" placeholder="N° Documento" value={billingInfo.documentNumber}
+                            onChange={(e) => setBillingInfo({ ...billingInfo, documentNumber: e.target.value.replace(/\D/g, "") })}
+                            className="md:col-span-2 w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none placeholder:text-gray-600" />
+                        </div>
+                        <input required type="text" placeholder="Dirección" value={billingInfo.address}
+                          onChange={(e) => setBillingInfo({ ...billingInfo, address: e.target.value })}
+                          className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none placeholder:text-gray-600" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <input required type="text" placeholder="Ciudad" value={billingInfo.city}
+                            onChange={(e) => setBillingInfo({ ...billingInfo, city: e.target.value })}
+                            className="md:col-span-2 w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none placeholder:text-gray-600" />
+                          <input type="text" placeholder="Cód. Postal" value={billingInfo.zipCode}
+                            onChange={(e) => setBillingInfo({ ...billingInfo, zipCode: e.target.value })}
+                            className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none placeholder:text-gray-600" />
+                        </div>
+                        <input required type="tel" placeholder="Teléfono" value={billingInfo.phone}
+                          onChange={(e) => setBillingInfo({ ...billingInfo, phone: e.target.value })}
+                          className="w-full bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none placeholder:text-gray-600" />
+                      </motion.div>
+                    )}
                   </div>
 
                   {checkoutError && (

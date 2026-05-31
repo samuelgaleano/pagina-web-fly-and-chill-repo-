@@ -53,6 +53,8 @@ export interface Order {
   discountAmount?: number;
   promoCode?: string;
   shippingInfo?: ShippingInfo;
+  billingInfo?: ShippingInfo;
+  billingSameAsShipping?: boolean;
   paymentMethod?: string;
   serial?: string;
   reference?: string;

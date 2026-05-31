@@ -101,7 +101,7 @@ service cloud.firestore {
 
     function isValidOrder(data) {
       return hasRequiredFields(['userId', 'items', 'total', 'createdAt', 'shippingInfo', 'paymentMethod']) &&
-             hasOnlyAllowedFields(['userId', 'items', 'total', 'subtotal', 'createdAt', 'updatedAt', 'discountAmount', 'promoCode', 'shippingInfo', 'status', 'paymentMethod', 'serial', 'reference', 'paymentStatus', 'emailSent', 'wompiTransactionId', 'subscriptionFee']) &&
+             hasOnlyAllowedFields(['userId', 'items', 'total', 'subtotal', 'createdAt', 'updatedAt', 'discountAmount', 'promoCode', 'shippingInfo', 'billingInfo', 'billingSameAsShipping', 'status', 'paymentMethod', 'serial', 'reference', 'paymentStatus', 'emailSent', 'wompiTransactionId', 'subscriptionFee']) &&
              (isAuthenticated() ? (data.userId == request.auth.uid) : (data.userId == "anonymous")) &&
              data.items is list && data.items.size() > 0 && data.items.size() <= 50 &&
              data.total is number && data.total > 0 &&

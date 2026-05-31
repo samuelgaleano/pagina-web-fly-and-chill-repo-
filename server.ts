@@ -394,6 +394,8 @@ async function startServer() {
         discountAmount: orderData.discountAmount ?? 0,
         promoCode: orderData.promoCode ?? null,
         shippingInfo: orderData.shippingInfo,
+        billingInfo: orderData.billingInfo ?? orderData.shippingInfo,
+        billingSameAsShipping: orderData.billingSameAsShipping ?? true,
         paymentMethod: orderData.paymentMethod || "wompi",
         serial,
         reference,
