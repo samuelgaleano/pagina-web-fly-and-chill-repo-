@@ -3,6 +3,7 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import admin from "firebase-admin";
+import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 import fs from "fs";
@@ -25,27 +26,102 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Initialize Firebase Admin (for other services if needed, but not primary DB)
 const firebaseConfigPath = path.join(process.cwd(), "firebase-applet-config.json");
 const firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf-8"));
 const dbIdFromConfig = (firebaseConfig.firestoreDatabaseId || "").trim();
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    projectId: firebaseConfig.projectId,
-  });
+// ===============================================================
+// Firestore access — prefer the Admin SDK (service account) which
+// bypasses security rules. This is the correct pattern for a
+// server-side payment backend: it removes the dependency on
+// deploying Firestore rules and prevents clients from forging
+// orders. If no service account is available, fall back to the
+// client JS SDK (which IS subject to the deployed rules).
+// ===============================================================
+function loadServiceAccount(): any | null {
+  try {
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      return JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    }
+    const candidates = [
+      process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      path.join(process.cwd(), "service-account.json"),
+    ].filter(Boolean) as string[];
+    for (const p of candidates) {
+      if (p && fs.existsSync(p)) {
+        return JSON.parse(fs.readFileSync(p, "utf-8"));
+      }
+    }
+  } catch (e) {
+    console.error("Could not load Firebase service account:", e);
+  }
+  return null;
 }
 
-// Initialize Firebase JS SDK for server use (bypasses credential/IAM issues)
+const serviceAccount = loadServiceAccount();
+
+if (!admin.apps.length) {
+  admin.initializeApp(
+    serviceAccount
+      ? { credential: admin.credential.cert(serviceAccount), projectId: firebaseConfig.projectId }
+      : { projectId: firebaseConfig.projectId }
+  );
+}
+
+// Client JS SDK (fallback / browser-equivalent access)
 const jsApp = initializeFirebaseApp(firebaseConfig);
-const db = dbIdFromConfig ? getJSFirestore(jsApp, dbIdFromConfig) : getJSFirestore(jsApp);
+const clientDb = dbIdFromConfig ? getJSFirestore(jsApp, dbIdFromConfig) : getJSFirestore(jsApp);
 
-const FieldValue = {
-  serverTimestamp: jsServerTimestamp,
-  increment: jsIncrement
-};
+let useAdmin = false;
+let adminDb: any = null;
+if (serviceAccount) {
+  try {
+    adminDb = dbIdFromConfig ? getAdminFirestore(admin.app(), dbIdFromConfig) : getAdminFirestore(admin.app());
+    useAdmin = true;
+    console.log(`Firestore: using Admin SDK (service account). Project: ${firebaseConfig.projectId}, Database: ${dbIdFromConfig || "(default)"}`);
+  } catch (e) {
+    console.error("Admin Firestore init failed, falling back to client SDK:", e);
+  }
+}
+if (!useAdmin) {
+  console.log(`Firestore: using client JS SDK (subject to security rules). Project: ${firebaseConfig.projectId}, Database: ${dbIdFromConfig || "(default)"}`);
+  console.warn("⚠️  No Firebase service account found. For production, set FIREBASE_SERVICE_ACCOUNT (or deploy firestore.rules) so order writes succeed.");
+}
 
-console.log(`Firestore (JS SDK) initialized. Project: ${firebaseConfig.projectId}, Database: ${dbIdFromConfig || "(default)"}`);
+// ---- Firestore data-layer helpers (work with either SDK) ----
+function svTimestamp(): any {
+  return useAdmin ? admin.firestore.FieldValue.serverTimestamp() : jsServerTimestamp();
+}
+function svIncrement(n: number): any {
+  return useAdmin ? admin.firestore.FieldValue.increment(n) : jsIncrement(n);
+}
+async function addDocument(coll: string, data: any): Promise<string> {
+  if (useAdmin && adminDb) {
+    const ref = await adminDb.collection(coll).add(data);
+    return ref.id;
+  }
+  const ref = await addDoc(collection(clientDb, coll), data);
+  return ref.id;
+}
+async function queryOne(coll: string, field: string, value: any): Promise<{ id: string; data: any } | null> {
+  if (useAdmin && adminDb) {
+    const snap = await adminDb.collection(coll).where(field, "==", value).limit(1).get();
+    if (snap.empty) return null;
+    const d = snap.docs[0];
+    return { id: d.id, data: d.data() };
+  }
+  const snap = await getDocs(query(collection(clientDb, coll), where(field, "==", value), jsLimit(1)));
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  return { id: d.id, data: d.data() };
+}
+async function updateDocument(coll: string, id: string, updates: any): Promise<void> {
+  if (useAdmin && adminDb) {
+    await adminDb.collection(coll).doc(id).update(updates);
+    return;
+  }
+  await updateJSDoc(jsDoc(clientDb, coll, id), updates);
+}
 
 // ===============================================================
 // Wompi configuration
@@ -90,17 +166,15 @@ function makeTransporter() {
   });
 }
 
+const WHATSAPP_PHONE = "573019202618";
+
 // Bootstrap: Ensure BIENVENIDO10 promo code exists
 async function bootstrapPromoCodes() {
-  const tryBootstrap = async (label: string) => {
-    console.log(`Verifying Firestore connection on ${label} database...`);
-    const promoRef = collection(db, "promoCodes");
-    const q = query(promoRef, where("code", "==", "BIENVENIDO10"), jsLimit(1));
-    const snapshot = await getDocs(q);
-
-    if (snapshot.empty) {
-      console.log(`Bootstrapping BIENVENIDO10 promo code on ${label}...`);
-      await addDoc(promoRef, {
+  try {
+    const existing = await queryOne("promoCodes", "code", "BIENVENIDO10");
+    if (!existing) {
+      console.log("Bootstrapping BIENVENIDO10 promo code...");
+      await addDocument("promoCodes", {
         code: "BIENVENIDO10",
         discountType: "percentage",
         discountValue: 10,
@@ -109,15 +183,9 @@ async function bootstrapPromoCodes() {
         description: "Código de bienvenida para nuevos suscriptores"
       });
     }
-    console.log(`Firestore connection verified on ${label} database.`);
-    return true;
-  };
-
-  try {
-    await tryBootstrap(dbIdFromConfig || "(default)");
+    console.log("Firestore connection verified.");
   } catch (error: any) {
-    console.error("Error bootstrapping promo codes with JS SDK:", error.message || error);
-    // If it fails here, it might be due to rules or if the databaseId is wrong
+    console.error("Error bootstrapping promo codes:", error.message || error);
   }
 }
 
@@ -144,7 +212,7 @@ async function sendOrderApprovedEmails(order: any) {
   const discountAmount = order.discountAmount || 0;
   const total = order.total;
 
-  const whatsappStatusUrl = `https://api.whatsapp.com/send?phone=573019202618&text=${encodeURIComponent(
+  const whatsappStatusUrl = `https://api.whatsapp.com/send?phone=${WHATSAPP_PHONE}&text=${encodeURIComponent(
     `Hola, quiero preguntar sobre el estado de mi pedido y fechas de entrega de mi pedido numero: ${displaySerial}`
   )}`;
 
@@ -235,12 +303,7 @@ async function sendOrderApprovedEmails(order: any) {
 
 // Find an order document by its Wompi reference (= serial)
 async function findOrderByReference(reference: string) {
-  const ordersRef = collection(db, "orders");
-  const q = query(ordersRef, where("reference", "==", reference), jsLimit(1));
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  const docSnap = snap.docs[0];
-  return { id: docSnap.id, ref: docSnap.ref, data: docSnap.data() as any };
+  return queryOne("orders", "reference", reference);
 }
 
 // Map a Wompi status to our internal status + persist + send email once.
@@ -255,7 +318,7 @@ async function reconcileOrderWithTransaction(tx: any) {
   const wompiStatus = String(tx.status || "").toUpperCase(); // APPROVED, DECLINED, VOIDED, ERROR, PENDING
   const current = found.data;
 
-  // Idempotency: if already approved + email sent, do nothing.
+  // Idempotency: if already in this status and email sent, do nothing.
   if (current.paymentStatus === wompiStatus && current.emailSent) return;
 
   const internalStatus =
@@ -267,13 +330,13 @@ async function reconcileOrderWithTransaction(tx: any) {
     paymentStatus: wompiStatus,
     status: internalStatus,
     wompiTransactionId: tx.id || current.wompiTransactionId || null,
-    updatedAt: jsServerTimestamp(),
+    updatedAt: svTimestamp(),
   };
 
   const shouldSendEmail = wompiStatus === "APPROVED" && !current.emailSent;
   if (shouldSendEmail) updates.emailSent = true;
 
-  await updateJSDoc(found.ref, updates);
+  await updateDocument("orders", found.id, updates);
 
   if (shouldSendEmail) {
     try {
@@ -287,7 +350,6 @@ async function reconcileOrderWithTransaction(tx: any) {
 async function startServer() {
   console.log("Starting server initialization...");
 
-  // Await bootstrap to ensure connectivity
   await bootstrapPromoCodes().catch(err => console.error("Bootstrap failed:", err));
 
   console.log("Proceeding with server setup...");
@@ -298,7 +360,7 @@ async function startServer() {
 
   // Health check API
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
+    res.json({ status: "ok", firestore: useAdmin ? "admin" : "client", timestamp: new Date().toISOString() });
   });
 
   // Expose the public (non-secret) Wompi config to the frontend
@@ -315,15 +377,13 @@ async function startServer() {
     }
 
     try {
-      // 1. Save to Firestore 'leads' collection
-      await addDoc(collection(db, "leads"), {
+      await addDocument("leads", {
         email,
-        signupDate: jsServerTimestamp(),
+        signupDate: svTimestamp(),
         source: "footer_newsletter",
         status: "potential_lead"
       });
 
-      // 2. Send Welcome Email
       const transporter = makeTransporter();
       const fromEmail = process.env.SMTP_FROM_NEWSLETTER || '"Fly and Chill" <newsletter@flyandchill.store>';
       const mailOptions = {
@@ -379,14 +439,13 @@ async function startServer() {
       const amountInCents = Math.round(Number(orderData.total) * 100);
       if (!Number.isFinite(amountInCents) || amountInCents < 150000) {
         // Wompi requires a minimum of 1.500 COP
-        return res.status(400).json({ error: "El monto del pedido no es válido." });
+        return res.status(400).json({ error: "El monto del pedido no es válido (mínimo $1.500 COP)." });
       }
 
       const serial = generateSerial();
       const reference = serial; // unique reference used by Wompi
 
-      // 1. Save to Firestore as PENDING
-      const orderRef = await addDoc(collection(db, "orders"), {
+      const orderId = await addDocument("orders", {
         userId: "anonymous",
         items: orderData.items,
         subtotal: orderData.subtotal ?? null,
@@ -402,30 +461,28 @@ async function startServer() {
         status: "pending",
         paymentStatus: "PENDING",
         emailSent: false,
-        createdAt: jsServerTimestamp(),
+        createdAt: svTimestamp(),
       });
 
-      // 1.5 Increment promo code usage if applicable
+      // Increment promo code usage if applicable
       if (orderData.promoCode) {
         try {
-          const promoRef = collection(db, "promoCodes");
-          const q = query(promoRef, where("code", "==", orderData.promoCode), jsLimit(1));
-          const promoQuery = await getDocs(q);
-          if (!promoQuery.empty) {
-            await updateJSDoc(promoQuery.docs[0].ref, { usageCount: jsIncrement(1) });
+          const promo = await queryOne("promoCodes", "code", orderData.promoCode);
+          if (promo) {
+            await updateDocument("promoCodes", promo.id, { usageCount: svIncrement(1) });
           }
         } catch (promoErr: any) {
           console.error("Error updating promo code usage:", promoErr.message || promoErr);
         }
       }
 
-      // 2. Build Wompi integrity signature (server-side, secret never leaves backend)
+      // Build Wompi integrity signature (server-side, secret never leaves backend)
       const signature = buildIntegritySignature(reference, amountInCents);
       const redirectUrl = `${PUBLIC_BASE_URL}/checkout/confirmation`;
 
       res.json({
         success: true,
-        orderId: orderRef.id,
+        orderId,
         serial,
         reference,
         amountInCents,
@@ -434,16 +491,14 @@ async function startServer() {
         publicKey: WOMPI_PUBLIC_KEY,
         redirectUrl,
       });
-    } catch (error) {
-      console.error("Order creation error:", error);
+    } catch (error: any) {
+      console.error("Order creation error:", error?.message || error);
       res.status(500).json({ error: "Hubo un error al procesar tu pedido." });
     }
   });
 
   // ============================================================
   // Transaction status — called by the confirmation page.
-  // Reads the transaction from Wompi, reconciles the order and
-  // returns the current status to the client.
   // ============================================================
   app.get("/api/wompi/transaction/:id", async (req, res) => {
     const { id } = req.params;
@@ -540,7 +595,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT} (Wompi ${WOMPI_ENV})`);
+    console.log(`Server running on http://localhost:${PORT} (Wompi ${WOMPI_ENV}, Firestore ${useAdmin ? "admin" : "client"})`);
   });
 }
 
