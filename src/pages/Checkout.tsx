@@ -19,7 +19,13 @@ const PAYMENT_OPTIONS: { id: PaymentChannel; title: string; desc: string; icon: 
 
 const DOC_TYPES = ["CC", "CE", "NIT", "PP", "TI"];
 
-const WOMPI_CHECKOUT_URL = "https://checkout.wompi.co/p/";
+// El Widget de Wompi se carga desde index.html (checkout.wompi.co/widget.js)
+// y queda disponible como window.WidgetCheckout.
+declare global {
+  interface Window {
+    WidgetCheckout: any;
+  }
+}
 
 export function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
@@ -62,10 +68,13 @@ export function Checkout() {
   const itemsCount = items.length;
 
   useEffect(() => {
-    if (itemsCount === 0) {
+    // Redirige a la tienda si el carrito está vacío, EXCEPTO cuando ya se lanzó
+    // el pago: en ese caso el carrito se vacía a propósito y el callback del
+    // widget navega a la confirmación (no queremos pisarlo con /shop).
+    if (itemsCount === 0 && !isProcessing) {
       navigate("/shop");
     }
-  }, [itemsCount, navigate]);
+  }, [itemsCount, isProcessing, navigate]);
 
   if (itemsCount === 0) {
     return null;
@@ -114,8 +123,67 @@ export function Checkout() {
   const subscriptionFee = 5000;
   const finalTotal = Math.max(0, totalPrice + subscriptionFee - discountAmount);
 
-  // Build the Wompi Web Checkout URL with literal (colon) keys and redirect.
-  const redirectToWompi = (data: any) => {
+  // Abre la pasarela de Wompi como MODAL sobre la misma página usando el Widget
+  // (window.WidgetCheckout). El usuario completa los datos del método de pago
+  // ahí mismo, sin salir del sitio. Si el widget no estuviera disponible (script
+  // bloqueado, etc.), cae de vuelta al checkout por redirección como respaldo.
+  const openWompiWidget = (data: any) => {
+    const fullName = `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim();
+    const phone = shippingInfo.phone.replace(/\D/g, "");
+
+    if (typeof window === "undefined" || !window.WidgetCheckout) {
+      redirectToWompiFallback(data);
+      return;
+    }
+
+    try {
+      const checkout = new window.WidgetCheckout({
+        currency: data.currency || "COP",
+        amountInCents: data.amountInCents,
+        reference: data.reference,
+        publicKey: data.publicKey,
+        signature: { integrity: data.signature },
+        redirectUrl: data.redirectUrl,
+        customerData: {
+          email: shippingInfo.email,
+          fullName,
+          phoneNumber: phone,
+          phoneNumberPrefix: "+57",
+          legalId: shippingInfo.documentNumber,
+          legalIdType: shippingInfo.documentType,
+        },
+        shippingAddress: {
+          addressLine1: shippingInfo.address,
+          city: shippingInfo.city,
+          region: shippingInfo.city,
+          country: "CO",
+          phoneNumber: phone,
+        },
+      });
+
+      // El callback se dispara cuando el usuario termina/cierra el widget.
+      checkout.open((result: any) => {
+        const tx = result?.transaction;
+        clearCart();
+        if (tx?.id) {
+          // Llevamos al usuario a la pantalla de confirmación, que consulta el
+          // estado real de la transacción y reconcilia el pedido (mismo flujo
+          // que ya existía con la redirección).
+          navigate(`/checkout/confirmation?id=${encodeURIComponent(tx.id)}`);
+        } else {
+          // El usuario cerró el widget sin completar: a confirmación en modo
+          // "pendiente" (usará el serial guardado en localStorage).
+          navigate("/checkout/confirmation");
+        }
+      });
+    } catch (err) {
+      console.error("No se pudo abrir el widget de Wompi, usando redirección:", err);
+      redirectToWompiFallback(data);
+    }
+  };
+
+  // Respaldo: si el Widget no carga, se usa el Web Checkout por redirección.
+  const redirectToWompiFallback = (data: any) => {
     const fullName = `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim();
     const phone = shippingInfo.phone.replace(/\D/g, "");
     const parts = [
@@ -130,14 +198,13 @@ export function Checkout() {
       `customer-data:phone-number=${encodeURIComponent(phone)}`,
       `customer-data:legal-id=${encodeURIComponent(shippingInfo.documentNumber)}`,
       `customer-data:legal-id-type=${encodeURIComponent(shippingInfo.documentType)}`,
-      // Pre-fill the shipping address inside Wompi's checkout.
       `shipping-address:address-line-1=${encodeURIComponent(shippingInfo.address)}`,
       `shipping-address:country=CO`,
       `shipping-address:region=${encodeURIComponent(shippingInfo.city)}`,
       `shipping-address:city=${encodeURIComponent(shippingInfo.city)}`,
       `shipping-address:phone-number=${encodeURIComponent(phone)}`,
     ];
-    window.location.href = `${WOMPI_CHECKOUT_URL}?${parts.join("&")}`;
+    window.location.href = `https://checkout.wompi.co/p/?${parts.join("&")}`;
   };
 
   const handlePaymentSubmit = async (e: React.FormEvent) => {
@@ -196,13 +263,14 @@ export function Checkout() {
       }
 
       // Remember the order so the confirmation page can show it even if the
-      // status query is slow, then hand off to Wompi's secure checkout.
+      // status query is slow, then open Wompi's secure widget over the page.
       try {
         localStorage.setItem("lastOrder", JSON.stringify({ serial: data.serial, reference: data.reference }));
       } catch {}
 
-      clearCart();
-      redirectToWompi(data);
+      // El carrito se limpia en el callback del widget (cuando el usuario
+      // termina), no antes, para no vaciarlo si cierra el modal sin pagar.
+      openWompiWidget(data);
     } catch (error: any) {
       console.error("Checkout error:", error);
       setIsProcessing(false);
@@ -230,7 +298,9 @@ export function Checkout() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16 items-start">
+        {/* Sin items-start: las columnas se estiran a la altura de la fila, de
+            modo que el resumen (sticky) tenga recorrido y acompañe el scroll. */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
           {/* Main Content — Envío + Pago en una sola pantalla */}
           <div className="lg:col-span-2">
             <form onSubmit={handlePaymentSubmit} className="space-y-10">
@@ -448,9 +518,9 @@ export function Checkout() {
             </form>
           </div>
 
-          {/* Order Summary Sidebar */}
+          {/* Order Summary Sidebar — sticky: acompaña el scroll al llenar el form */}
           <div className="lg:col-span-1">
-            <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 sticky top-32 border border-white/10 shadow-2xl">
+            <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 lg:sticky lg:top-32 border border-white/10 shadow-2xl">
               <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-primary mb-8">
                 Resumen del Pedido
               </h3>
