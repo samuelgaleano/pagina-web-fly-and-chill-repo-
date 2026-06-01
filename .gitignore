@@ -7,3 +7,10 @@ coverage/
 .env*
 !.env.example
 *.mp4
+
+# Claude Code skill artifacts
+.agents/
+skills-lock.json
+
+# Firebase service account (NUNCA subir a git)
+service-account.json

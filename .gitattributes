@@ -1,0 +1,5 @@
+# Forzar saltos de línea LF en scripts de shell. Sin esto, al clonar/editar en
+# Windows podrían quedar con CRLF y FALLARÍAN en la instancia Linux con un error
+# del tipo: "/usr/bin/env: 'bash\r': No such file or directory".
+*.sh text eol=lf
+deploy.sh text eol=lf

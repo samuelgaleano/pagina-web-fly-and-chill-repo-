@@ -1,9 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { collection, onSnapshot, query, doc, updateDoc, increment, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, doc, writeBatch, increment, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { db, auth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { Product } from '@/types';
 import { products as staticProducts } from '@/data/products';
+
+// El catálogo cambia muy poco. En vez de un listener en tiempo real
+// (onSnapshot) que factura lecturas de Firestore de forma continua por cada
+// visitante, leemos UNA vez y cacheamos en localStorage con un TTL. Así, las
+// visitas repetidas dentro de la ventana NO generan ninguna lectura.
+const PRODUCTS_CACHE_KEY = 'elite_vape_products_cache';
+const PRODUCTS_CACHE_TS_KEY = 'elite_vape_products_cache_ts';
+const PRODUCTS_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora
 
 interface ShopContextType {
   products: Product[];
@@ -20,7 +28,7 @@ const ShopContext = createContext<ShopContextType | undefined>(undefined);
 export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>(() => {
     // Try to load from localStorage on initial boot
-    const cached = localStorage.getItem('elite_vape_products_cache');
+    const cached = localStorage.getItem(PRODUCTS_CACHE_KEY);
     if (cached) {
       try {
         return JSON.parse(cached);
@@ -66,33 +74,47 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  // Products Listener (Real-time)
+  // Products (lectura única con caché + TTL en lugar de listener en tiempo real)
   useEffect(() => {
     if (!isAuthReady) return;
 
-    const q = query(collection(db, 'products'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      if (snapshot.empty) {
-        // If Firestore is empty, we still keep the cache or fallback to static
-        if (products.length === 0) setProducts(staticProducts);
-      } else {
-        const productsData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Product[];
-        
-        setProducts(productsData);
-        // Update local cache for offline access
-        localStorage.setItem('elite_vape_products_cache', JSON.stringify(productsData));
-      }
-      setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'products');
-      // If Firestore fails (e.g. offline), we keep the current state (which was loaded from cache)
-      setLoading(false);
-    });
+    let cancelled = false;
 
-    return () => unsubscribe();
+    const cachedTs = Number(localStorage.getItem(PRODUCTS_CACHE_TS_KEY) || 0);
+    const cacheFresh = cachedTs > 0 && (Date.now() - cachedTs) < PRODUCTS_CACHE_TTL_MS;
+
+    // Si la caché aún está fresca, no consultamos Firestore (cero lecturas).
+    if (cacheFresh && products.length > 0) {
+      setLoading(false);
+      return;
+    }
+
+    (async () => {
+      try {
+        const snapshot = await getDocs(query(collection(db, 'products')));
+        if (cancelled) return;
+
+        if (snapshot.empty) {
+          if (products.length === 0) setProducts(staticProducts);
+        } else {
+          const productsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Product[];
+
+          setProducts(productsData);
+          localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(productsData));
+          localStorage.setItem(PRODUCTS_CACHE_TS_KEY, String(Date.now()));
+        }
+      } catch (error) {
+        // Sin conexión / sin permisos: conservamos lo que ya teníamos (caché o estático).
+        handleFirestoreError(error, OperationType.LIST, 'products');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [isAuthReady]);
 
   const placeOrder = async (items: { id: string; quantity: number; price: number }[]) => {

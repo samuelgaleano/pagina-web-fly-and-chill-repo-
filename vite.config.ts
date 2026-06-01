@@ -15,6 +15,23 @@ export default defineConfig(({mode}) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
+    build: {
+      // Separar las dependencias grandes en chunks propios. Como cambian poco,
+      // el navegador del cliente las cachea durante mucho tiempo entre
+      // despliegues (solo se re-descarga el código de la app que sí cambió).
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-firebase': ['firebase/app', 'firebase/firestore', 'firebase/auth'],
+            'vendor-motion': ['motion'],
+          },
+        },
+      },
+      // Las páginas ya van por chunks (lazy). Subimos el umbral del aviso para
+      // que solo alerte de regresiones reales de tamaño.
+      chunkSizeWarningLimit: 600,
+    },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
