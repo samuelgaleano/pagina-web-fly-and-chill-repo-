@@ -8,7 +8,7 @@
 
 | Capa | Servicio | Uso real | Modelo de costo |
 |------|----------|----------|-----------------|
-| Cómputo | **AWS EC2** (Amazon Linux 2023, 2 vCPU, ~1 GB RAM) | Express + frontend, vía PM2 detrás de nginx | **Fijo por hora** (lo pagas encendido o no) |
+| Cómputo | **AWS EC2 `t3.micro`** (2 vCPU, 1 GB RAM, disco EBS 8 GB), us-east-2 | Express + frontend, vía PM2 detrás de nginx | **Fijo por hora**, pero hoy cubierto por la **capa gratuita** (12 meses, 750 h/mes de t3.micro) → ~$0 |
 | Frontend | Servido por el mismo Express (`dist/`) | SPA React | Incluido en el EC2 |
 | Base de datos | **Firebase Firestore** | productos, pedidos, leads, promos | **Por operación** (lecturas/escrituras/borrados) + almacenamiento |
 | Auth | **Firebase Auth** (Google) | login de admin | **Gratis** hasta 50k MAU |
@@ -57,14 +57,17 @@ con cobro por invocación: añadiría costo y complejidad sin beneficio aquí.
    general: ninguna lectura en bucle ni listener en páginas públicas. Esto es lo
    que más baja la factura de Firebase.
 
-2. **EC2 → comprar un Savings Plan / Reserved Instance, o bajar de tamaño.**
-   El EC2 es tu único costo fijo real. Opciones, de menor a mayor cambio:
-   - **Savings Plan 1 año** sobre el tamaño actual: ~30–40% de descuento sin
-     tocar nada técnico.
-   - Si la RAM/CPU va holgada tras quitar Vite, **bajar a un tamaño menor**
-     (p. ej. de `small` a `micro`) reduce la tarifa por hora.
-   - La capa gratuita de EC2 (`t2.micro`/`t3.micro` 750h/mes) aplica solo los
-     primeros 12 meses de la cuenta y a ese tamaño.
+2. **EC2 — ya estás en el mínimo razonable (`t3.micro`) y en capa gratuita.**
+   Estado real: instancia creada ~2026-05-08, dentro de los **12 meses de capa
+   gratuita** (750 h/mes de `t3.micro` = una instancia encendida todo el mes).
+   Con poco tráfico, tu cómputo hoy cuesta **~$0**. Acciones:
+   - **No bajar de tamaño** (t3.micro ya es el piso práctico; 1 GB de RAM exige
+     el swap del paso 0 de DEPLOY.md para construir sin OOM).
+   - **Antes de que se cumplan los 12 meses**, decidir: comprar un **Savings
+     Plan** (~30–40% off) para seguir en t3.micro barato, o mover el frontend a
+     hosting estático gratis (ver punto 7) y mantener solo la API.
+   - Poner una **alerta de AWS Budgets** para enterarte cuando termine la capa
+     gratuita y la factura empiece a subir.
 
 3. **Cloudflare (gratis) por delante del dominio.** Pon el dominio en Cloudflare
    (plan free) como CDN/proxy:

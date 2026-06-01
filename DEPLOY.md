@@ -26,6 +26,26 @@ El servidor decide su comportamiento según `NODE_ENV`:
 > Si en `ss -tlnp` ves el puerto **24678** escuchando, el server está en modo DEV.
 > En producción ese puerto NO debe existir.
 
+## ⚠️ Paso 0 (una sola vez): crear swap
+
+La instancia es **t3.micro: 1 GB de RAM y 0 swap**. El build del frontend
+(esbuild + rollup, ~2.100 módulos) puede agotar la RAM y ser **abortado por el
+kernel (OOM)**, dejando el despliegue a medias. Crear 2 GB de swap lo evita y es
+gratis (usa el disco). Ejecutar **una sola vez** en la instancia:
+
+```bash
+sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab   # persiste tras reinicio
+free -h   # debe mostrar Swap: 2.0Gi
+```
+
+> Alternativa sin swap: construir el frontend en tu PC (`npm run build`) y subir
+> la carpeta `dist/` a la instancia. Pero lo recomendado es el swap + build en el
+> servidor (más simple y reproducible).
+
 ## Pasos de despliegue (en la instancia, usuario `ec2-user`)
 
 ```bash
