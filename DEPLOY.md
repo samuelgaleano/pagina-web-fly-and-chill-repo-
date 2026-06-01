@@ -31,7 +31,15 @@ El servidor decide su comportamiento según `NODE_ENV`:
 La instancia es **t3.micro: 1 GB de RAM y 0 swap**. El build del frontend
 (esbuild + rollup, ~2.100 módulos) puede agotar la RAM y ser **abortado por el
 kernel (OOM)**, dejando el despliegue a medias. Crear 2 GB de swap lo evita y es
-gratis (usa el disco). Ejecutar **una sola vez** en la instancia:
+gratis (usa el disco). Hay un script que lo hace; ejecutar **una sola vez**:
+
+```bash
+cd ~/origin
+./scripts/setup-swap.sh
+free -h   # debe mostrar Swap: 2.0Gi
+```
+
+Equivalente manual:
 
 ```bash
 sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
@@ -39,14 +47,33 @@ sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab   # persiste tras reinicio
-free -h   # debe mostrar Swap: 2.0Gi
 ```
 
 > Alternativa sin swap: construir el frontend en tu PC (`npm run build`) y subir
 > la carpeta `dist/` a la instancia. Pero lo recomendado es el swap + build en el
 > servidor (más simple y reproducible).
 
-## Pasos de despliegue (en la instancia, usuario `ec2-user`)
+## Despliegue en UN comando (recomendado)
+
+Una vez creado el swap (paso 0) y con el `.env` configurado, cada redeploy es:
+
+```bash
+cd ~/origin
+./deploy.sh
+```
+
+`deploy.sh` encadena: `git pull` → `npm ci` → `npm run build` → `pm2 reload` →
+verificación de `/api/health` y de que NO esté el puerto HMR 24678. Si algo
+falla, se detiene con un error claro (no deja el sitio a medio desplegar).
+
+> Primera vez en una instancia recién creada:
+> ```bash
+> ./scripts/setup-swap.sh    # crea 2 GB de swap (una sola vez)
+> pm2 start ecosystem.config.cjs && pm2 save
+> ```
+> `deploy.sh` ya detecta si el proceso existe y usa `reload` o `start` según corresponda.
+
+## Pasos de despliegue manuales (equivalente, por si prefieres a mano)
 
 ```bash
 cd ~/origin
