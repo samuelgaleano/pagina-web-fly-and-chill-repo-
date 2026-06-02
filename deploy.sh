@@ -50,12 +50,21 @@ pm2 save
 
 # 5) Verificación post-despliegue.
 step "Verificación"
-sleep 3
 PORT="${PORT:-3000}"
-if curl -fs "http://localhost:${PORT}/api/health" >/dev/null; then
-  echo -e "${GREEN}   /api/health OK${NC}"
-else
-  fail "La API no responde en http://localhost:${PORT}/api/health"
+# En t3.micro tsx puede tardar varios segundos en arrancar. Reintentamos hasta
+# ~40s antes de declarar el fallo, para no dar un falso negativo.
+OK=0
+for i in $(seq 1 20); do
+  if curl -fs "http://localhost:${PORT}/api/health" >/dev/null 2>&1; then
+    OK=1
+    echo -e "${GREEN}   /api/health OK (intento $i)${NC}"
+    break
+  fi
+  sleep 2
+done
+if [ "$OK" -ne 1 ]; then
+  echo -e "${RED}   La API no respondió tras ~40s. Revisa: pm2 logs flyandchill --lines 40${NC}"
+  fail "Verificación de /api/health fallida"
 fi
 
 if ss -tlnp 2>/dev/null | grep -q ':24678'; then
