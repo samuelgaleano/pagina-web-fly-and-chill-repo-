@@ -186,7 +186,16 @@ async function bootstrapPromoCodes() {
     }
     console.log("Firestore connection verified.");
   } catch (error: any) {
-    console.error("Error bootstrapping promo codes:", error.message || error);
+    const msg = error?.message || String(error);
+    if (msg.includes("PERMISSION_DENIED") || error?.code === "permission-denied") {
+      // En modo cliente, sembrar el promo desde el servidor está bloqueado por
+      // las reglas (es lo esperado). No es fatal: el promo ya existe en
+      // Firestore o se gestiona desde el panel de Admin. Con cuenta de
+      // servicio (Admin SDK) este aviso desaparece.
+      console.warn("Bootstrap de promo omitido (modo cliente: escritura restringida por reglas). No es crítico.");
+    } else {
+      console.error("Error bootstrapping promo codes:", msg);
+    }
   }
 }
 
