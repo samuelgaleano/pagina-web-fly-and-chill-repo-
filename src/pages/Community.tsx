@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
-import { Music, Instagram, Twitter, Send, ArrowRight, Play } from "lucide-react";
+import { Music, Instagram, Twitter, Send, ArrowRight, Play, Loader2 } from "lucide-react";
 
 export function Community() {
   const [email, setEmail] = useState("");
   const [song, setSong] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSendingSong, setIsSendingSong] = useState(false);
+  const [songSent, setSongSent] = useState(false);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,10 +16,25 @@ export function Community() {
     setEmail("");
   };
 
-  const handleSongSubmit = (e: React.FormEvent) => {
+  const handleSongSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSong("");
-    alert("¡Canción sugerida! La revisaremos para la próxima playlist.");
+    if (!song.trim() || isSendingSong) return;
+    setIsSendingSong(true);
+    try {
+      const res = await fetch("/api/community/song", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ song }),
+      });
+      if (!res.ok) throw new Error();
+      setSong("");
+      setSongSent(true);
+      setTimeout(() => setSongSent(false), 3500);
+    } catch {
+      alert("No se pudo registrar la sugerencia. Intenta de nuevo.");
+    } finally {
+      setIsSendingSong(false);
+    }
   };
 
   return (
@@ -44,18 +61,27 @@ export function Community() {
               <div className="bg-white/5 rounded-3xl p-10 border border-white/10 shadow-sm">
                 <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-6">Sugiérenos un track para la playlist</h4>
                 <form onSubmit={handleSongSubmit} className="flex gap-3">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={song}
                     onChange={(e) => setSong(e.target.value)}
-                    placeholder="Link de Spotify o nombre de la canción" 
+                    placeholder="Link de Spotify o nombre de la canción"
                     className="flex-1 bg-white/10 border border-white/10 rounded-2xl px-6 py-4 text-sm text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none placeholder:text-gray-500"
                     required
                   />
-                  <Button type="submit" className="w-14 h-14 rounded-2xl bg-brand-primary text-brand-black hover:bg-white transition-all flex items-center justify-center">
-                    <Send className="w-4 h-4" />
+                  <Button type="submit" disabled={isSendingSong || !song.trim()} className="w-14 h-14 rounded-2xl bg-brand-primary text-brand-black hover:bg-white transition-all flex items-center justify-center disabled:opacity-60">
+                    {isSendingSong ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </Button>
                 </form>
+                {songSent && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-4 text-[11px] font-bold uppercase tracking-widest text-brand-primary flex items-center gap-2"
+                  >
+                    <Music className="w-3.5 h-3.5" /> ¡Gracias! La revisaremos para la próxima playlist.
+                  </motion.p>
+                )}
               </div>
             </div>
             

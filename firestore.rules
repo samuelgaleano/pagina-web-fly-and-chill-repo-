@@ -172,5 +172,11 @@ service cloud.firestore {
       allow create: if true; // Allow anonymous signup
       allow update, delete: if isAdmin();
     }
+    // Sugerencias de canciones de la comunidad
+    match /songSuggestions/{suggestionId} {
+      allow read: if isAdmin();
+      allow create: if true; // sugerencia anónima desde la comunidad
+      allow update, delete: if isAdmin();
+    }
   }
 }

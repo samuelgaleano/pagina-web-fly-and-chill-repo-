@@ -3,7 +3,7 @@ import { useShop } from "@/context/ShopContext";
 import { Button } from "@/components/ui/Button";
 import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
 import { collection, doc, deleteDoc, addDoc, updateDoc, setDoc, onSnapshot, query, orderBy, writeBatch } from "firebase/firestore";
-import { Plus, Edit2, Trash2, X, Save, Package, Image as ImageIcon, Tag, Beaker, DollarSign, FileText, Upload, Loader2, Ticket, LayoutDashboard, Users } from "lucide-react";
+import { Plus, Edit2, Trash2, X, Save, Package, Image as ImageIcon, Tag, Beaker, DollarSign, FileText, Upload, Loader2, Ticket, LayoutDashboard, Users, Music } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { formatPrice } from "@/lib/formatters";
 import { Product, PromoCode } from "@/types";
@@ -18,13 +18,15 @@ interface Lead {
 
 export function Admin() {
   const { products, loading, isAdmin } = useShop();
-  const [activeTab, setActiveTab] = useState<"products" | "promoCodes" | "leads" | "orders">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "promoCodes" | "leads" | "orders" | "music">("products");
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [songs, setSongs] = useState<any[]>([]);
   const [loadingPromo, setLoadingPromo] = useState(true);
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingSongs, setLoadingSongs] = useState(true);
   
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<Product> | null>(null);
@@ -110,6 +112,23 @@ export function Admin() {
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, "orders");
       setLoadingOrders(false);
+    });
+
+    return () => unsubscribe();
+  }, [isAdmin]);
+
+  // Sugerencias de canciones de la comunidad
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const q = query(collection(db, "songSuggestions"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setSongs(data);
+      setLoadingSongs(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, "songSuggestions");
+      setLoadingSongs(false);
     });
 
     return () => unsubscribe();
@@ -557,12 +576,24 @@ export function Admin() {
                 <Users className="w-3 h-3" />
                 Leads
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab("orders")}
                 className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === "orders" ? "bg-brand-primary text-brand-black shadow-lg" : "text-gray-400 hover:text-white"}`}
               >
                 <Package className="w-3 h-3" />
                 Pedidos
+              </button>
+              <button
+                onClick={() => setActiveTab("music")}
+                className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === "music" ? "bg-brand-primary text-brand-black shadow-lg" : "text-gray-400 hover:text-white"}`}
+              >
+                <Music className="w-3 h-3" />
+                Música
+                {songs.length > 0 && (
+                  <span className={`ml-1 text-[9px] w-5 h-5 rounded-full flex items-center justify-center ${activeTab === "music" ? "bg-brand-black/20 text-brand-black" : "bg-brand-primary/20 text-brand-primary"}`}>
+                    {songs.length}
+                  </span>
+                )}
               </button>
             </div>
 
@@ -875,6 +906,55 @@ export function Admin() {
                 <div className="text-center py-20 bg-white/5 rounded-[3rem] border border-dashed border-white/10">
                   <Package className="w-12 h-12 text-gray-600 mx-auto mb-4 opacity-20" />
                   <p className="text-gray-500 uppercase tracking-widest text-sm font-bold">No hay pedidos registrados aún</p>
+                </div>
+              )}
+            </div>
+          )
+        ) : activeTab === "music" ? (
+          loadingSongs ? (
+            <div className="text-center py-20 animate-pulse text-brand-primary font-black uppercase tracking-widest">
+              Sincronizando sugerencias...
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {songs.map((s) => {
+                const text: string = s.song || "";
+                const isLink = /^https?:\/\//i.test(text);
+                return (
+                  <div key={s.id} className="bg-white/5 border border-white/10 rounded-3xl p-6 flex items-center gap-5 hover:border-brand-primary/30 transition-all">
+                    <div className="w-12 h-12 rounded-2xl bg-brand-primary/10 flex items-center justify-center text-brand-primary shrink-0">
+                      <Music className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {isLink ? (
+                        <a href={text} target="_blank" rel="noopener noreferrer" className="text-white font-bold hover:text-brand-primary transition-colors break-all underline-offset-2 hover:underline">
+                          {text}
+                        </a>
+                      ) : (
+                        <p className="text-white font-bold break-words">{text}</p>
+                      )}
+                      <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">
+                        {s.createdAt?.toDate ? s.createdAt.toDate().toLocaleString() : "Reciente"}
+                      </p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!confirm("¿Eliminar esta sugerencia?")) return;
+                        try { await deleteDoc(doc(db, "songSuggestions", s.id)); }
+                        catch (e) { handleFirestoreError(e, OperationType.DELETE, `songSuggestions/${s.id}`); }
+                      }}
+                      className="text-gray-500 hover:text-brand-secondary transition-colors p-2 shrink-0"
+                      aria-label="Eliminar sugerencia"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                );
+              })}
+              {songs.length === 0 && (
+                <div className="text-center py-20 bg-white/5 rounded-[3rem] border border-dashed border-white/10">
+                  <Music className="w-12 h-12 text-gray-600 mx-auto mb-4 opacity-20" />
+                  <p className="text-gray-500 uppercase tracking-widest text-sm font-bold">Aún no hay canciones sugeridas</p>
                 </div>
               )}
             </div>

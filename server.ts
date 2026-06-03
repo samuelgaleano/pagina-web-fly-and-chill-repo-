@@ -436,6 +436,32 @@ async function startServer() {
   });
 
   // ============================================================
+  // Sugerencias de canciones de la comunidad — se guardan en
+  // Firestore (colección songSuggestions) y aparecen en el panel
+  // de Admin, sección Música.
+  // ============================================================
+  app.post("/api/community/song", async (req, res) => {
+    const { song } = req.body;
+
+    if (!song || typeof song !== "string" || !song.trim()) {
+      return res.status(400).json({ error: "La canción es requerida" });
+    }
+
+    try {
+      await addDocument("songSuggestions", {
+        song: song.trim().slice(0, 500),
+        createdAt: svTimestamp(),
+        source: "community_playlist",
+        status: "pending",
+      });
+      res.json({ success: true, message: "¡Canción sugerida! La revisaremos para la próxima playlist." });
+    } catch (error) {
+      console.error("Song suggestion error:", error);
+      res.status(500).json({ error: "No se pudo registrar la sugerencia. Intenta de nuevo." });
+    }
+  });
+
+  // ============================================================
   // Order Creation API — creates a PENDING order and returns the
   // data needed by the frontend to open Wompi Web Checkout.
   // No email is sent here; emails go out only once payment is APPROVED.
