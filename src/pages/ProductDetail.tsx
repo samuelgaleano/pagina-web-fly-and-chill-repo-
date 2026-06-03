@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useShop } from "@/context/ShopContext";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
-import { Star, ArrowLeft, ShieldCheck, Truck, Droplet, Minus, Plus, Loader2, Phone, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, ArrowLeft, ArrowRight, ShieldCheck, Truck, Droplet, Minus, Plus, Loader2, Phone, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatPrice } from "@/lib/formatters";
 
 export function ProductDetail() {
@@ -47,7 +47,7 @@ export function ProductDetail() {
   const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 3);
 
   return (
-    <div className="bg-brand-black min-h-screen pt-20 pb-16 text-white overflow-x-hidden">
+    <div className="bg-brand-black min-h-screen pt-20 pb-28 lg:pb-16 text-white overflow-x-hidden">
       <div className="container mx-auto px-5 max-w-7xl">
         <Link to="/shop" className="inline-flex items-center gap-2 text-gray-500 hover:text-brand-primary transition-colors mb-3 text-[9px] font-black uppercase tracking-[0.2em] opacity-50 hover:opacity-100">
           <ArrowLeft className="w-3 h-3" /> Volver
@@ -205,36 +205,38 @@ export function ProductDetail() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover/purchase:bg-brand-primary/10 transition-all duration-700" />
               
               <div className="relative z-10 space-y-8">
-                {/* Actions Row */}
+                {/* Acción PRINCIPAL: comprar ahora (va directo al checkout, el
+                    camino más corto a la venta). */}
                 <div className="flex flex-col gap-4">
-                  <Button 
-                    size="lg" 
-                    className={`w-full h-14 text-[11px] font-black tracking-[0.3em] rounded-2xl transition-all shadow-xl active:scale-95 ${
-                      isAdded 
-                        ? "bg-white text-brand-black" 
-                        : "bg-brand-primary text-brand-black hover:bg-white"
-                    }`}
-                    disabled={product.stock === 0}
-                    onClick={handleAddToCart}
-                  >
-                    {product.stock === 0 ? "AGOTADO" : (isAdded ? "¡AÑADIDO! ✅" : "AÑADIR AL CARRITO")}
-                  </Button>
-                </div>
-
-                {/* Secondary Actions Row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <Button 
-                    variant="outline" 
-                    className="h-14 text-[10px] font-black tracking-[0.2em] border-white/10 hover:border-brand-primary text-white hover:text-brand-primary rounded-2xl transition-all hover:bg-white/5"
+                  <Button
+                    size="lg"
+                    className="w-full h-16 text-sm font-black tracking-[0.2em] rounded-2xl transition-all shadow-xl shadow-brand-primary/20 active:scale-95 bg-brand-primary text-brand-black hover:bg-white flex items-center justify-center gap-3"
                     disabled={product.stock === 0}
                     onClick={() => {
                       addToCart(product, quantity);
                       navigate("/checkout");
                     }}
                   >
-                    COMPRAR AHORA
+                    {product.stock === 0 ? "AGOTADO" : "COMPRAR AHORA"}
+                    {product.stock > 0 && <ArrowRight className="w-5 h-5" />}
                   </Button>
-                  <a 
+                </div>
+
+                {/* Acciones secundarias: añadir al carrito (sin salir) + WhatsApp. */}
+                <div className="grid grid-cols-2 gap-4">
+                  <Button
+                    variant="outline"
+                    className={`h-14 text-[10px] font-black tracking-[0.2em] rounded-2xl transition-all ${
+                      isAdded
+                        ? "border-brand-primary bg-brand-primary/10 text-brand-primary"
+                        : "border-white/10 hover:border-brand-primary text-white hover:text-brand-primary hover:bg-white/5"
+                    }`}
+                    disabled={product.stock === 0}
+                    onClick={handleAddToCart}
+                  >
+                    {isAdded ? "¡AÑADIDO! ✅" : "AÑADIR AL CARRITO"}
+                  </Button>
+                  <a
                     href={`https://api.whatsapp.com/send?phone=573019202618&text=Hola!%20Estoy%20interesado%20en%20el%20producto:%20${product.name}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -403,6 +405,26 @@ export function ProductDetail() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Barra de compra FIJA inferior — solo móvil. Estándar de e-commerce
+          para que comprar esté siempre a un toque sin tener que hacer scroll. */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-brand-black/90 backdrop-blur-xl border-t border-white/10 px-4 py-3 flex items-center gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+        <div className="flex flex-col shrink-0">
+          <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">Precio</span>
+          <span className="text-xl font-sans font-black text-brand-primary leading-none">${formatPrice(product.price)}</span>
+        </div>
+        <Button
+          className="flex-1 h-14 text-xs font-black tracking-[0.2em] rounded-2xl bg-brand-primary text-brand-black hover:bg-white active:scale-95 transition-all flex items-center justify-center gap-2"
+          disabled={product.stock === 0}
+          onClick={() => {
+            addToCart(product, quantity);
+            navigate("/checkout");
+          }}
+        >
+          {product.stock === 0 ? "AGOTADO" : "COMPRAR AHORA"}
+          {product.stock > 0 && <ArrowRight className="w-4 h-4" />}
+        </Button>
       </div>
     </div>
   );
