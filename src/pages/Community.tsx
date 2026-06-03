@@ -1,13 +1,46 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
-import { Music, Instagram, Twitter, Send, ArrowRight, Play, Loader2 } from "lucide-react";
+import { Music, Instagram, Twitter, Send, ArrowRight, Play, Loader2, ExternalLink } from "lucide-react";
+
+const INSTAGRAM_URL = "https://www.instagram.com/flyand_chill/";
+
+interface IgPost {
+  id: string;
+  caption: string;
+  permalink: string;
+  image: string;
+  isVideo: boolean;
+  timestamp?: string;
+}
 
 export function Community() {
   const [email, setEmail] = useState("");
   const [song, setSong] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSendingSong, setIsSendingSong] = useState(false);
+  const [igPosts, setIgPosts] = useState<IgPost[]>([]);
+  const [igLoading, setIgLoading] = useState(true);
+  const [igConfigured, setIgConfigured] = useState(true);
+
+  // Feed de Instagram (se actualiza solo: cada post nuevo aparece arriba).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/instagram/feed");
+        const data = await res.json();
+        if (cancelled) return;
+        setIgConfigured(!!data.configured);
+        setIgPosts(Array.isArray(data.posts) ? data.posts : []);
+      } catch {
+        if (!cancelled) setIgConfigured(false);
+      } finally {
+        if (!cancelled) setIgLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
   const [songSent, setSongSent] = useState(false);
 
   const handleSubscribe = (e: React.FormEvent) => {
@@ -105,49 +138,98 @@ export function Community() {
         </div>
       </section>
 
-      {/* Social Feeds & Memes - High End Gallery */}
+      {/* Instagram Feed — se actualiza solo desde @flyand_chill */}
       <section className="py-32 bg-brand-black">
         <div className="container mx-auto px-6">
-          <div className="text-center mb-24">
-            <h2 className="text-5xl font-heading font-black text-white uppercase tracking-tighter mb-6">
+          <div className="flex flex-col items-center text-center mb-16 md:mb-24">
+            <div className="flex items-center gap-3 mb-6">
+              <Instagram className="w-5 h-5 text-brand-primary" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-primary">@flyand_chill</span>
+            </div>
+            <h2 className="text-5xl md:text-6xl font-heading font-black text-white uppercase tracking-tighter mb-6">
               Cultura Digital
             </h2>
-            <p className="serif text-xl text-gray-400 italic">Lo mejor de nuestra comunidad en redes.</p>
+            <p className="serif text-xl text-gray-400 italic max-w-xl">
+              Lo último de nuestra comunidad, directo desde Instagram.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <motion.div 
-                key={i}
-                whileHover={{ y: -10 }}
-                className="bg-white/5 rounded-3xl overflow-hidden group shadow-sm hover:shadow-2xl transition-all duration-500 border border-white/10 hover:border-brand-primary"
-              >
-                <div className="p-6 flex items-center gap-4 border-b border-white/10">
-                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/10">
-                    <span className="text-white font-heading font-black text-[10px] italic">F&C</span>
-                  </div>
-                  <div>
-                    <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">flyandchill</h4>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">@flyandchill_us</p>
-                  </div>
-                  <Instagram className="w-4 h-4 text-gray-500 ml-auto" />
-                </div>
-                <div className="aspect-square bg-white/5 relative overflow-hidden">
-                  <img 
-                    src={`https://picsum.photos/seed/meme${i}/800/800`} 
-                    alt="Community Post" 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-                <div className="p-8">
-                  <p className="serif text-lg text-gray-400 italic leading-relaxed">
-                    {i % 2 === 0 ? "Cuando el Kush pega justo a tiempo 🪰💨 #FlyAndChill #CannabisCulture" : "Viernes de Sativa y creatividad. ¿Qué están armando hoy? 🎨✨"}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          {/* Skeleton de carga */}
+          {igLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="aspect-square rounded-3xl bg-white/5 border border-white/10 animate-pulse" />
+              ))}
+            </div>
+          ) : igConfigured && igPosts.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
+                {igPosts.map((post, i) => (
+                  <motion.a
+                    key={post.id}
+                    href={post.permalink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-60px" }}
+                    transition={{ delay: Math.min(i * 0.05, 0.3), duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+                    className="group relative block aspect-square rounded-3xl overflow-hidden border border-white/10 bg-white/5 shadow-lg hover:border-brand-primary/40 transition-colors duration-300"
+                  >
+                    <img
+                      src={post.image}
+                      alt={post.caption ? post.caption.slice(0, 80) : "Publicación de Instagram"}
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 will-change-transform"
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    {/* Overlay con caption + icono al pasar el mouse */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-brand-black/90 via-brand-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
+                      {post.caption && (
+                        <p className="serif text-sm text-white/90 italic leading-snug line-clamp-3 mb-3">
+                          {post.caption}
+                        </p>
+                      )}
+                      <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-primary">
+                        <Instagram className="w-3.5 h-3.5" /> Ver en Instagram
+                      </span>
+                    </div>
+                    {post.isVideo && (
+                      <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-brand-black/60 backdrop-blur-md flex items-center justify-center">
+                        <Play className="w-3.5 h-3.5 text-white fill-white" />
+                      </div>
+                    )}
+                  </motion.a>
+                ))}
+              </div>
+              <div className="flex justify-center mt-16">
+                <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer">
+                  <Button size="lg" variant="outline" className="h-16 px-12 rounded-full text-xs font-black uppercase tracking-widest border-white/10 hover:border-brand-primary text-white hover:text-brand-primary transition-all flex items-center gap-3">
+                    <Instagram className="w-5 h-5" /> Síguenos en Instagram
+                  </Button>
+                </a>
+              </div>
+            </>
+          ) : (
+            /* Fallback elegante si el feed aún no está conectado o falla */
+            <div className="max-w-xl mx-auto text-center bg-white/5 border border-white/10 rounded-[2.5rem] p-12 md:p-16 shadow-2xl">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand-primary/30 to-brand-secondary/30 flex items-center justify-center mx-auto mb-8 border border-white/10">
+                <Instagram className="w-9 h-9 text-white" />
+              </div>
+              <h3 className="text-2xl font-heading font-black text-white uppercase tracking-tighter mb-4">
+                Síguenos en Instagram
+              </h3>
+              <p className="serif text-lg text-gray-400 italic mb-10 leading-relaxed">
+                Las últimas publicaciones, drops y momentos de la comunidad están en nuestra cuenta.
+              </p>
+              <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer">
+                <Button size="lg" className="h-16 px-12 rounded-full bg-brand-primary text-brand-black hover:bg-white transition-all text-xs font-black uppercase tracking-widest flex items-center gap-3">
+                  @flyand_chill <ExternalLink className="w-4 h-4" />
+                </Button>
+              </a>
+            </div>
+          )}
         </div>
       </section>
 

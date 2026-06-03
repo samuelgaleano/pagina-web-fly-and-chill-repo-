@@ -160,6 +160,39 @@ El servidor verifica el `checksum` de cada evento con `WOMPI_EVENTS_SECRET`
 antes de actualizar el pedido. En estado `APPROVED` envía el correo de
 confirmación (idempotente: solo una vez por pedido).
 
+## Feed de Instagram (página de Comunidad) — GRATIS
+
+La sección "Cultura Digital" muestra las publicaciones de **@flyand_chill** y se
+actualiza sola. Usa la **Graph API oficial de Instagram** (gratuita). Mientras no
+haya token, la web muestra un fallback elegante "Síguenos en Instagram" (no se
+rompe). Para activarlo, generar un token long-lived (una vez) y ponerlo en el
+`.env` como `INSTAGRAM_ACCESS_TOKEN`. El servidor lo **auto-renueva** cada 60 días.
+
+**Cómo generar el token (Instagram API with Instagram Login, sin Facebook):**
+
+1. La cuenta **@flyand_chill** debe ser **Profesional** (Business o Creator):
+   en la app de Instagram → Configuración → Tipo de cuenta → cambiar a profesional.
+2. Ir a **developers.facebook.com** → crear una app de tipo **"Consumer"** o
+   **"Business"** → añadir el producto **"Instagram"** (Instagram API Setup with
+   Instagram login / Instagram Basic Display).
+3. Generar un **token de acceso** para la cuenta y autorizarla.
+4. Convertir el token corto en uno **long-lived** (60 días) con:
+   ```
+   curl -s "https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=APP_SECRET&access_token=TOKEN_CORTO"
+   ```
+5. Poner el token resultante en el `.env` de la instancia:
+   ```ini
+   INSTAGRAM_ACCESS_TOKEN="IGQVJ...eltokenlargo..."
+   ```
+6. `./deploy.sh` (o reiniciar PM2). Verificar:
+   ```
+   curl https://flyandchill.store/api/instagram/feed
+   ```
+   Debe devolver `{"configured":true,"posts":[...]}`.
+
+> El feed se cachea 30 min en el servidor para no exceder límites de la API.
+> Cada publicación nueva en Instagram aparecerá arriba automáticamente.
+
 ## Comprobación post-despliegue (checklist)
 
 1. `curl https://flyandchill.store/api/health` → `{"status":"ok",...}`.
