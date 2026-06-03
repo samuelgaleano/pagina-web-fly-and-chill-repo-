@@ -27,6 +27,15 @@ export function Home() {
   // Get the first 4 products from the store to display as featured
   const featuredProducts = useMemo(() => shopProducts.slice(0, 4), [shopProducts]);
 
+  // CTA principal del hero: enlaza al primer producto REAL disponible (con
+  // stock) en lugar de un ID fijo que puede no existir en producción. Si no
+  // hay productos cargados aún, lleva al catálogo (nunca a "no encontrado").
+  const heroProduct = useMemo(() => {
+    const inStock = shopProducts.find(p => (p.stock ?? 0) > 0);
+    return inStock || shopProducts[0] || null;
+  }, [shopProducts]);
+  const heroCtaLink = heroProduct ? `/shop/${heroProduct.id}` : "/shop";
+
   return (
     <div className="flex flex-col min-h-screen bg-brand-black">
       {/* Hero Section - Redesigned for better mobile responsiveness */}
@@ -75,14 +84,23 @@ export function Home() {
               </p>
             </div>
 
-            <div className="pt-6 md:pt-4">
-              <Link to="/shop/disp-berry-runtz">
-                <Button 
-                  size="lg" 
-                  className="w-full md:w-auto h-20 md:h-16 px-10 text-lg md:text-xl font-black tracking-tight bg-gradient-buy text-white rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(255,0,0,0.4)] border-none animate-glow"
+            <div className="pt-6 md:pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
+              <Link to={heroCtaLink} className="w-full sm:w-auto">
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto h-16 md:h-16 px-10 text-base md:text-xl font-black tracking-tight bg-gradient-buy text-white rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(255,0,0,0.4)] border-none animate-glow"
                 >
                   <ShoppingCart className="w-6 h-6" />
-                  COMPRAR BONE HEAD
+                  COMPRAR BEST SELLER
+                </Button>
+              </Link>
+              <Link to="/shop" className="w-full sm:w-auto">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto h-16 px-8 text-sm md:text-base font-black tracking-widest uppercase rounded-2xl flex items-center justify-center gap-2 border-white/30 text-white hover:bg-white hover:text-brand-black transition-all duration-300 backdrop-blur-sm"
+                >
+                  Ver Catálogo <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
             </div>
@@ -253,12 +271,13 @@ export function Home() {
                     )}
                   </div>
                   
-                  {/* Quick Action Overlay */}
-                  <div className="absolute inset-0 bg-brand-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                    <Button 
+                  {/* Quick Action Overlay — solo en desktop (hover). En móvil se
+                      usa el botón visible bajo el precio (no hay hover táctil). */}
+                  <div className="absolute inset-0 bg-brand-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:flex items-center justify-center backdrop-blur-[2px]">
+                    <Button
                       className={`rounded-full font-black uppercase tracking-widest px-10 py-7 shadow-[0_0_30px_rgba(118,187,202,0.5)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 ${
-                        recentlyAdded.has(product.id) 
-                          ? "bg-white text-brand-black scale-105" 
+                        recentlyAdded.has(product.id)
+                          ? "bg-white text-brand-black scale-105"
                           : "bg-brand-primary text-brand-black hover:bg-white"
                       }`}
                       onClick={(e) => {
@@ -286,17 +305,34 @@ export function Home() {
                     </h3>
                   </Link>
                   
-                  <div className="mt-auto flex justify-between items-center pt-4 border-t border-white/5">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Precio</span>
-                      <span className="text-2xl font-sans font-black text-white">${formatPrice(product.price)}</span>
+                  <div className="mt-auto pt-4 border-t border-white/5">
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Precio</span>
+                        <span className="text-2xl font-sans font-black text-white">${formatPrice(product.price)}</span>
+                      </div>
+                      <Link
+                        to={`/shop/${product.id}`}
+                        className="w-12 h-12 rounded-2xl border border-white/10 flex items-center justify-center hover:bg-brand-primary hover:border-brand-primary hover:text-brand-black transition-all group/btn shadow-lg shrink-0"
+                        aria-label="Ver producto"
+                      >
+                        <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform" />
+                      </Link>
                     </div>
-                    <Link 
-                      to={`/shop/${product.id}`}
-                      className="w-12 h-12 rounded-2xl border border-white/10 flex items-center justify-center hover:bg-brand-primary hover:border-brand-primary hover:text-brand-black transition-all group/btn shadow-lg"
+                    {/* Botón Agregar SIEMPRE visible (clave en móvil). */}
+                    <Button
+                      className={`md:hidden w-full h-12 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                        recentlyAdded.has(product.id)
+                          ? "bg-white text-brand-black"
+                          : "bg-brand-primary text-brand-black"
+                      }`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleAddToCart(product);
+                      }}
                     >
-                      <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform" />
-                    </Link>
+                      {recentlyAdded.has(product.id) ? "¡Añadido! ✅" : "Agregar"}
+                    </Button>
                   </div>
                 </div>
               </motion.div>

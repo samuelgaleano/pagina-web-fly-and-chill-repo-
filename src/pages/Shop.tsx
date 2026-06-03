@@ -29,7 +29,16 @@ export function Shop() {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
   const [currentPage, setCurrentPage] = useState(1);
   const [recentlyAdded, setRecentlyAdded] = useState<Set<string>>(new Set());
+  // En móvil los filtros arrancan colapsados para priorizar ver los productos.
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const itemsPerPage = 6;
+
+  // Conteo de filtros activos (para el badge del botón en móvil).
+  const activeFilterCount =
+    (searchTerm ? 1 : 0) +
+    selectedCategories.length +
+    selectedFlavors.length +
+    (priceRange.min > 0 || priceRange.max < maxPrice ? 1 : 0);
 
   // Handle URL search params for initial category filtering
   useEffect(() => {
@@ -125,8 +134,26 @@ export function Shop() {
           
           {/* Sidebar Filters */}
           <aside className="w-full lg:w-72 flex-shrink-0">
-            <div className="sticky top-32 space-y-10 bg-white/5 backdrop-blur-xl p-8 rounded-[2rem] border border-white/10 shadow-2xl">
-              
+            {/* Botón para abrir/cerrar filtros — SOLO en móvil. */}
+            <button
+              onClick={() => setIsFiltersOpen(prev => !prev)}
+              className="lg:hidden w-full flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-6 py-4 mb-4 text-white"
+              aria-expanded={isFiltersOpen}
+            >
+              <span className="flex items-center gap-3 text-xs font-black uppercase tracking-widest">
+                <Filter className="w-4 h-4 text-brand-primary" />
+                Filtros y búsqueda
+                {activeFilterCount > 0 && (
+                  <span className="bg-brand-primary text-brand-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </span>
+              <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isFiltersOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            <div className={`${isFiltersOpen ? "block" : "hidden"} lg:block lg:sticky lg:top-32 space-y-10 bg-white/5 backdrop-blur-xl p-8 rounded-[2rem] border border-white/10 shadow-2xl`}>
+
               {/* Search Bar */}
               <div className="relative group">
                 <input
@@ -339,13 +366,14 @@ export function Shop() {
                         )}
                       </div>
                       
-                      {/* Quick Action Overlay */}
-                      <div className="absolute inset-0 bg-brand-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px] z-20">
+                      {/* Quick Action Overlay — solo desktop (hover). En móvil
+                          se usa el botón visible bajo el precio. */}
+                      <div className="absolute inset-0 bg-brand-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:flex items-center justify-center backdrop-blur-[2px] z-20">
                         <Link to={`/shop/${product.id}`} className="absolute inset-0 z-0" />
-                        <Button 
+                        <Button
                           className={`relative z-10 rounded-full font-black uppercase tracking-[0.2em] px-5 py-3.5 text-[9px] sm:text-[10px] shadow-[0_0_30px_rgba(118,187,202,0.4)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 ${
-                            recentlyAdded.has(product.id) 
-                              ? "bg-white text-brand-black scale-105" 
+                            recentlyAdded.has(product.id)
+                              ? "bg-white text-brand-black scale-105"
                               : "bg-brand-primary text-brand-black hover:bg-white"
                           }`}
                           disabled={product.stock === 0}
@@ -376,17 +404,36 @@ export function Shop() {
                         </h3>
                       </Link>
                       
-                      <div className="mt-auto flex justify-between items-center pt-6 border-t border-white/5">
-                        <div className="flex flex-col">
-                          <span className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Precio Elite</span>
-                          <span className="text-2xl font-sans font-black text-white tracking-tight">${formatPrice(product.price)}</span>
+                      <div className="mt-auto pt-6 border-t border-white/5">
+                        <div className="flex justify-between items-center mb-4">
+                          <div className="flex flex-col">
+                            <span className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Precio Elite</span>
+                            <span className="text-2xl font-sans font-black text-white tracking-tight">${formatPrice(product.price)}</span>
+                          </div>
+                          <Link
+                            to={`/shop/${product.id}`}
+                            className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-brand-primary hover:border-brand-primary hover:text-brand-black transition-all group/btn shadow-xl active:scale-90 shrink-0"
+                            aria-label="Ver producto"
+                          >
+                            <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform" />
+                          </Link>
                         </div>
-                        <Link 
-                          to={`/shop/${product.id}`}
-                          className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-brand-primary hover:border-brand-primary hover:text-brand-black transition-all group/btn shadow-xl active:scale-90"
+                        {/* Botón Agregar SIEMPRE visible (clave en móvil). */}
+                        <Button
+                          className={`md:hidden w-full h-12 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                            recentlyAdded.has(product.id)
+                              ? "bg-white text-brand-black"
+                              : "bg-brand-primary text-brand-black"
+                          }`}
+                          disabled={product.stock === 0}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleAddToCart(product);
+                          }}
                         >
-                          <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform" />
-                        </Link>
+                          {product.stock === 0 ? "AGOTADO" : (recentlyAdded.has(product.id) ? "¡LISTO! ✅" : "Agregar")}
+                        </Button>
                       </div>
                     </div>
                   </motion.article>
