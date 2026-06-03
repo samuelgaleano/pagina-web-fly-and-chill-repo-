@@ -14,7 +14,6 @@ const PAYMENT_OPTIONS: { id: PaymentChannel; title: string; desc: string; icon: 
   { id: "CARD", title: "Tarjeta", desc: "Crédito o débito", icon: CreditCard },
   { id: "PSE", title: "PSE", desc: "Débito desde tu banco", icon: Landmark },
   { id: "NEQUI", title: "Nequi", desc: "Pago desde la app", icon: Smartphone },
-  { id: "BANCOLOMBIA", title: "Bancolombia", desc: "Botón Bancolombia", icon: Landmark },
 ];
 
 const DOC_TYPES = ["CC", "CE", "NIT", "PP", "TI"];
