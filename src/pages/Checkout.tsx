@@ -301,8 +301,9 @@ export function Checkout() {
         {/* Sin items-start: las columnas se estiran a la altura de la fila, de
             modo que el resumen (sticky) tenga recorrido y acompañe el scroll. */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
-          {/* Main Content — Envío + Pago en una sola pantalla */}
-          <div className="lg:col-span-2">
+          {/* Main Content — Envío + Pago. En móvil va DEBAJO del resumen
+              (order-2); en desktop a la izquierda (order-1). */}
+          <div className="lg:col-span-2 order-2 lg:order-1">
             <form onSubmit={handlePaymentSubmit} className="space-y-10">
               {/* ===== Datos de Envío ===== */}
               <motion.div
@@ -518,8 +519,9 @@ export function Checkout() {
             </form>
           </div>
 
-          {/* Order Summary Sidebar — sticky: acompaña el scroll al llenar el form */}
-          <div className="lg:col-span-1">
+          {/* Order Summary Sidebar — en móvil va PRIMERO (order-1); en desktop a
+              la derecha (order-2) y sticky para acompañar el scroll. */}
+          <div className="lg:col-span-1 order-1 lg:order-2">
             <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 lg:sticky lg:top-32 border border-white/10 shadow-2xl">
               <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-primary mb-8">
                 Resumen del Pedido
