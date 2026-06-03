@@ -4,7 +4,7 @@
  */
 
 import { lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AgeVerificationModal } from "@/components/ui/AgeVerificationModal";
@@ -32,8 +32,35 @@ const Admin = lazy(() => import("@/pages/Admin").then(m => ({ default: m.Admin }
 function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-[60vh]" role="status" aria-label="Cargando">
-      <div className="w-10 h-10 border-4 border-brand-mint/30 border-t-brand-mint rounded-full animate-spin" />
+      <div className="w-10 h-10 border-4 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
     </div>
+  );
+}
+
+// Las rutas (con su propia clave por pathname) se re-montan en cada
+// navegación, disparando una entrada suave fade-up. Da una sensación de app
+// pulida sin el costo/complejidad de AnimatePresence sobre lazy routes.
+function AppRoutes() {
+  const location = useLocation();
+  return (
+    <main className="flex-grow">
+      <Suspense fallback={<PageLoader />}>
+        <div key={location.pathname} className="page-fade-in">
+          <Routes location={location}>
+            <Route path="/" element={<Home />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/shop/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/checkout/confirmation" element={<CheckoutConfirmation />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/admin" element={<Admin />} />
+          </Routes>
+        </div>
+      </Suspense>
+    </main>
   );
 }
 
@@ -47,24 +74,7 @@ export default function App() {
             <div className="min-h-screen bg-brand-black text-white flex flex-col font-sans">
               <AgeVerificationModal />
               <Navbar />
-
-              <main className="flex-grow">
-                <Suspense fallback={<PageLoader />}>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/shop" element={<Shop />} />
-                    <Route path="/shop/:id" element={<ProductDetail />} />
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/checkout/confirmation" element={<CheckoutConfirmation />} />
-                    <Route path="/community" element={<Community />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/admin" element={<Admin />} />
-                  </Routes>
-                </Suspense>
-              </main>
-
+              <AppRoutes />
               <Footer />
               <WhatsAppButton />
             </div>

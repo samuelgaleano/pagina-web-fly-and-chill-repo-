@@ -160,9 +160,10 @@ export function Navbar() {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
             className="fixed inset-0 z-30 pt-32 bg-brand-black/95 backdrop-blur-xl md:hidden"
           >
             <nav className="flex flex-col items-center gap-8 p-8">

@@ -161,3 +161,112 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-brand-amber;
 }
+
+/* ============================================================
+   Sistema de movimiento (basado en la filosofía de Emil Kowalski)
+   Curvas de easing fuertes — las built-in de CSS son demasiado
+   débiles y no transmiten intención. Se usan en toda la UI.
+   ============================================================ */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);        /* entradas/salidas, feedback */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);    /* movimiento en pantalla */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);     /* cajones tipo iOS */
+}
+
+/* Scroll suave al navegar por anclas/rutas. */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Feedback de presión universal: cualquier botón o enlace "responde" al
+   tacto/click encogiéndose levemente. Detalle invisible que hace que la
+   interfaz se sienta viva. Solo transform/opacity = corre en GPU. */
+button,
+a,
+[role="button"],
+.btn {
+  transition: transform 160ms var(--ease-out);
+}
+button:active,
+a:active,
+[role="button"]:active {
+  transform: scale(0.97);
+}
+/* No encoger enlaces de texto en bloques de contenido (se ve raro). */
+.prose a:active,
+p > a:active {
+  transform: none;
+}
+
+/* Imágenes: render más nítido al escalar y sin "salto" de layout. */
+img {
+  -webkit-user-drag: none;
+}
+
+/* Stagger reutilizable para listas/grids que entran en pantalla. */
+@keyframes fc-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* En pantallas táctiles, el "hover" se dispara al tocar y deja estados
+   pegados (imágenes ampliadas, overlays). Neutralizamos los zooms de hover
+   en touch para que el catálogo se vea limpio al navegar con el dedo. */
+@media (hover: none) {
+  .group:hover .group-hover\:scale-105,
+  .group:hover .group-hover\:scale-110 {
+    transform: none;
+  }
+}
+
+/* Entrada suave al cambiar de página (fade + subida ligera). Corto y con
+   ease-out fuerte para que la navegación se sienta instantánea pero pulida. */
+.page-fade-in {
+  animation: fc-page-in 360ms var(--ease-out) both;
+}
+@keyframes fc-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-fade-in {
+    animation: fc-page-fade 200ms ease both;
+  }
+  @keyframes fc-page-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+/* ============================================================
+   Accesibilidad: respeta "reducir movimiento". No eliminamos todo
+   (las transiciones de opacidad/color ayudan a comprender), pero sí
+   quitamos los movimientos grandes que pueden marear.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.12s !important;
+    scroll-behavior: auto !important;
+  }
+  button:active,
+  a:active,
+  [role="button"]:active {
+    transform: none;
+  }
+}

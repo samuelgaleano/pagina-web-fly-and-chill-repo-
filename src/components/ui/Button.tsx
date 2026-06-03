@@ -13,7 +13,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+          // transition-[color,background-color,transform] + active:scale-[0.97]
+          // dan el feedback de presión que hace que el botón "responda" al tacto
+          // (principio de Emil). La curva ease-out fuerte se aplica vía CSS global.
+          "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-[color,background-color,box-shadow,transform] duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
           {
             "bg-brand-gold text-brand-black hover:bg-brand-amber": variant === "default",
             "border border-brand-gold text-brand-gold hover:bg-brand-gold/10": variant === "outline",

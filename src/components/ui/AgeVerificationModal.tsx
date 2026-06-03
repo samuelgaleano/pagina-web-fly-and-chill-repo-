@@ -28,12 +28,14 @@ export function AgeVerificationModal() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-black/95 backdrop-blur-xl p-6"
         >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            initial={{ scale: 0.95, opacity: 0, y: 12 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            exit={{ scale: 0.97, opacity: 0, y: 8 }}
+            transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
             className="bg-brand-dark/80 backdrop-blur-2xl p-10 md:p-14 rounded-[3rem] max-w-lg w-full text-center shadow-[0_0_50px_rgba(118,187,202,0.2)] relative overflow-hidden border border-white/10"
           >
             {/* Animated Gradient Border Effect */}

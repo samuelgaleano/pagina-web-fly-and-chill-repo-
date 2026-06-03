@@ -51,11 +51,13 @@ export function Cart() {
                 className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-8 relative group border border-white/10 shadow-2xl"
               >
                 <Link to={`/shop/${item.id}`} className="w-32 h-32 sm:w-40 sm:h-40 shrink-0 bg-brand-black/40 rounded-2xl overflow-hidden group-hover:shadow-[0_0_30px_rgba(118,187,202,0.2)] transition-all duration-500 flex items-center justify-center">
-                  <img 
-                    src={item.images[0]} 
-                    alt={item.name} 
+                  <img
+                    src={item.images[0]}
+                    alt={item.name}
                     className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-1000"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    decoding="async"
                   />
                 </Link>
                 
