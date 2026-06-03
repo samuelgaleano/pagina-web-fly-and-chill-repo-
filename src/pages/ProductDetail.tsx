@@ -64,11 +64,13 @@ export function ProductDetail() {
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 className="w-full h-full flex items-center justify-center p-3 md:p-8"
               >
-                <motion.img 
-                  src={product.images[activeImageIndex]} 
-                  alt={product.name} 
+                <motion.img
+                  src={product.images[activeImageIndex]}
+                  alt={product.name}
                   className="w-full h-full object-contain cursor-grab active:cursor-grabbing"
                   referrerPolicy="no-referrer"
+                  decoding="async"
+                  fetchPriority="high"
                   drag="x"
                   dragConstraints={{ left: 0, right: 0 }}
                   dragElastic={0.1}
@@ -385,11 +387,13 @@ export function ProductDetail() {
                   className="group"
                 >
                   <Link to={`/shop/${related.id}`} className="block relative aspect-square overflow-hidden bg-white/5 border border-white/10 rounded-3xl shadow-sm mb-6">
-                    <img 
-                      src={related.images[0]} 
-                      alt={related.name} 
+                    <img
+                      src={related.images[0]}
+                      alt={related.name}
                       className="w-full h-full object-contain p-6 group-hover:scale-110 transition-transform duration-1000"
                       referrerPolicy="no-referrer"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </Link>
                   <div className="text-center space-y-2">

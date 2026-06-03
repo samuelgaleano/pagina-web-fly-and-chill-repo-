@@ -10,6 +10,7 @@ coverage/
 
 # Claude Code skill artifacts
 .agents/
+.claude/skills/
 skills-lock.json
 
 # Firebase service account (NUNCA subir a git)

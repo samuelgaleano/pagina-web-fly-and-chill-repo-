@@ -117,11 +117,13 @@ export function Home() {
               {/* Glow effect behind product */}
               <div className="absolute inset-0 bg-brand-primary/30 blur-[80px] md:blur-[120px] rounded-full animate-pulse" />
               
-              <img 
-                src="/produc.png" 
-                alt="Berry Runtz Disposable" 
+              <img
+                src="/produc.png"
+                alt="Berry Runtz Disposable"
                 className="relative z-10 w-full h-auto object-contain animate-float drop-shadow-[0_0_50px_rgba(118,187,202,0.4)]"
                 referrerPolicy="no-referrer"
+                fetchPriority="high"
+                decoding="async"
               />
             </div>
           </motion.div>
@@ -149,11 +151,13 @@ export function Home() {
               className="md:col-span-7 relative group overflow-hidden bg-brand-dark cursor-pointer rounded-[2rem] border border-white/5"
             >
               <Link to="/shop?category=BATERIAS" className="block w-full h-full">
-                <img 
-                  src="/combos.png" 
-                  alt="COMBOS" 
+                <img
+                  src="/combos.png"
+                  alt="COMBOS"
                   className="w-full h-full object-contain opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
                   referrerPolicy="no-referrer"
+                  loading="lazy"
+                  decoding="async"
                   onError={(e) => {
                     e.currentTarget.src = "https://picsum.photos/seed/combos/1200/800";
                   }}
@@ -176,11 +180,13 @@ export function Home() {
                 className="relative group overflow-hidden bg-brand-dark cursor-pointer rounded-[2rem] border border-white/5"
               >
                 <Link to="/shop?category=Desechables" className="block w-full h-full">
-                  <img 
-                    src="/vapes.png" 
-                    alt="VAPES" 
+                  <img
+                    src="/vapes.png"
+                    alt="VAPES"
                     className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       e.currentTarget.src = "https://picsum.photos/seed/vapes/800/600";
                     }}
@@ -201,11 +207,13 @@ export function Home() {
                 className="relative group overflow-hidden bg-brand-dark cursor-pointer rounded-[2rem] border border-white/5"
               >
                 <Link to="/shop?category=CARTS NACIONALES" className="block w-full h-full">
-                  <img 
-                    src="/capsulas.png" 
-                    alt="CAPSULAS" 
+                  <img
+                    src="/capsulas.png"
+                    alt="CAPSULAS"
                     className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       e.currentTarget.src = "https://picsum.photos/seed/capsulas/800/600";
                     }}
@@ -246,20 +254,23 @@ export function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featuredProducts.map((product) => (
-              <motion.div 
+            {featuredProducts.map((product, i) => (
+              <motion.div
                 key={product.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="group relative bg-brand-dark/40 border border-white/5 rounded-[2rem] p-5 hover:border-brand-primary/40 transition-all duration-500 hover:shadow-[0_0_50px_rgba(118,187,202,0.15)] flex flex-col h-full"
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ delay: Math.min(i * 0.06, 0.3), duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                className="group relative bg-brand-dark/40 border border-white/5 rounded-[2rem] p-5 hover:border-brand-primary/40 transition-colors duration-300 hover:shadow-[0_0_50px_rgba(118,187,202,0.15)] flex flex-col h-full"
               >
                 <Link to={`/shop/${product.id}`} className="block relative aspect-square overflow-hidden rounded-2xl bg-brand-black/60 mb-6 group-hover:bg-brand-black/40 transition-colors">
-                  <img 
-                    src={product.images[0]} 
-                    alt={product.name} 
-                    className="w-full h-full object-contain p-8 group-hover:scale-110 transition-transform duration-700"
+                  <img
+                    src={product.images[0]}
+                    alt={product.name}
+                    className="w-full h-full object-contain p-8 group-hover:scale-110 transition-transform duration-700 will-change-transform"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    decoding="async"
                   />
                   
                   {/* Status Badge */}

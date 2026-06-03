@@ -339,22 +339,24 @@ export function Shop() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {paginatedProducts.map((product, i) => (
-                  <motion.article 
+                  <motion.article
                     key={product.id}
                     layout
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="group relative bg-brand-dark/40 border border-white/5 rounded-[2rem] p-5 hover:border-brand-primary/40 transition-all duration-500 hover:shadow-[0_0_50px_rgba(118,187,202,0.15)] flex flex-col h-full"
+                    transition={{ delay: Math.min(i * 0.05, 0.3), duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                    className="group relative bg-brand-dark/40 border border-white/5 rounded-[2rem] p-5 hover:border-brand-primary/40 transition-colors duration-300 hover:shadow-[0_0_50px_rgba(118,187,202,0.15)] flex flex-col h-full"
                   >
                     {/* Image Area */}
                     <div className="relative aspect-square overflow-hidden rounded-2xl bg-brand-black/60 mb-6 group-hover:bg-brand-black/40 transition-colors flex items-center justify-center">
                       <Link to={`/shop/${product.id}`} className="absolute inset-0 z-0 flex items-center justify-center">
-                        <img 
-                          src={product.images[0]} 
-                          alt={product.name} 
-                          className="object-contain h-full w-full p-2 md:p-3 group-hover:scale-110 transition-transform duration-700"
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="object-contain h-full w-full p-2 md:p-3 group-hover:scale-110 transition-transform duration-700 will-change-transform"
                           referrerPolicy="no-referrer"
+                          loading="lazy"
+                          decoding="async"
                         />
                       </Link>
 
