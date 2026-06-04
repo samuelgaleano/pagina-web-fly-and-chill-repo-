@@ -178,5 +178,11 @@ service cloud.firestore {
       allow create: if true; // sugerencia anónima desde la comunidad
       allow update, delete: if isAdmin();
     }
+    // Publicaciones de Instagram gestionadas desde el panel de Admin.
+    // Lectura pública (se muestran en la página de Comunidad).
+    match /instagramPosts/{postId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
   }
 }

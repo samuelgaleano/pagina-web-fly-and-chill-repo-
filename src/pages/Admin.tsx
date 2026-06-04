@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useShop } from "@/context/ShopContext";
 import { Button } from "@/components/ui/Button";
 import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
-import { collection, doc, deleteDoc, addDoc, updateDoc, setDoc, onSnapshot, query, orderBy, writeBatch } from "firebase/firestore";
-import { Plus, Edit2, Trash2, X, Save, Package, Image as ImageIcon, Tag, Beaker, DollarSign, FileText, Upload, Loader2, Ticket, LayoutDashboard, Users, Music } from "lucide-react";
+import { collection, doc, deleteDoc, addDoc, updateDoc, setDoc, onSnapshot, query, orderBy, writeBatch, serverTimestamp } from "firebase/firestore";
+import { Plus, Edit2, Trash2, X, Save, Package, Image as ImageIcon, Tag, Beaker, DollarSign, FileText, Upload, Loader2, Ticket, LayoutDashboard, Users, Music, Instagram } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { formatPrice } from "@/lib/formatters";
 import { Product, PromoCode } from "@/types";
@@ -18,15 +18,19 @@ interface Lead {
 
 export function Admin() {
   const { products, loading, isAdmin } = useShop();
-  const [activeTab, setActiveTab] = useState<"products" | "promoCodes" | "leads" | "orders" | "music">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "promoCodes" | "leads" | "orders" | "music" | "instagram">("products");
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [songs, setSongs] = useState<any[]>([]);
+  const [igPosts, setIgPosts] = useState<any[]>([]);
+  const [igUrlInput, setIgUrlInput] = useState("");
+  const [igSaving, setIgSaving] = useState(false);
   const [loadingPromo, setLoadingPromo] = useState(true);
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [loadingSongs, setLoadingSongs] = useState(true);
+  const [loadingIg, setLoadingIg] = useState(true);
   
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<Product> | null>(null);
@@ -133,6 +137,61 @@ export function Admin() {
 
     return () => unsubscribe();
   }, [isAdmin]);
+
+  // Publicaciones de Instagram gestionadas desde el Admin
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const q = query(collection(db, "instagramPosts"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setIgPosts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoadingIg(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, "instagramPosts");
+      setLoadingIg(false);
+    });
+
+    return () => unsubscribe();
+  }, [isAdmin]);
+
+  // Normaliza un link de Instagram a su forma canónica (/p/CODE/ o /reel/CODE/).
+  const normalizeIgUrl = (raw: string): string | null => {
+    const m = raw.trim().match(/instagram\.com\/(p|reel|tv)\/([A-Za-z0-9_-]+)/i);
+    if (!m) return null;
+    return `https://www.instagram.com/${m[1].toLowerCase()}/${m[2]}/`;
+  };
+
+  const handleAddIgPost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const url = normalizeIgUrl(igUrlInput);
+    if (!url) {
+      alert("Pega un link válido de una publicación de Instagram (ej: https://www.instagram.com/p/XXXX/).");
+      return;
+    }
+    if (igPosts.some(p => p.url === url)) {
+      alert("Esa publicación ya está agregada.");
+      setIgUrlInput("");
+      return;
+    }
+    setIgSaving(true);
+    try {
+      await addDoc(collection(db, "instagramPosts"), { url, createdAt: serverTimestamp() });
+      setIgUrlInput("");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, "instagramPosts");
+    } finally {
+      setIgSaving(false);
+    }
+  };
+
+  const handleDeleteIgPost = async (id: string) => {
+    if (!confirm("¿Quitar esta publicación de la página?")) return;
+    try {
+      await deleteDoc(doc(db, "instagramPosts", id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `instagramPosts/${id}`);
+    }
+  };
 
   const addImageUrl = () => {
     if (!imageUrlInput.trim() || !currentProduct) return;
@@ -595,6 +654,18 @@ export function Admin() {
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setActiveTab("instagram")}
+                className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === "instagram" ? "bg-brand-primary text-brand-black shadow-lg" : "text-gray-400 hover:text-white"}`}
+              >
+                <Instagram className="w-3 h-3" />
+                Instagram
+                {igPosts.length > 0 && (
+                  <span className={`ml-1 text-[9px] w-5 h-5 rounded-full flex items-center justify-center ${activeTab === "instagram" ? "bg-brand-black/20 text-brand-black" : "bg-brand-primary/20 text-brand-primary"}`}>
+                    {igPosts.length}
+                  </span>
+                )}
+              </button>
             </div>
 
             {activeTab === "products" ? (
@@ -959,6 +1030,73 @@ export function Admin() {
               )}
             </div>
           )
+        ) : activeTab === "instagram" ? (
+          <div className="space-y-8">
+            {/* Formulario para agregar una publicación */}
+            <form onSubmit={handleAddIgPost} className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-2 flex items-center gap-2">
+                <Instagram className="w-4 h-4" /> Agregar publicación
+              </h3>
+              <p className="text-gray-500 text-sm mb-6">
+                Pega el link de la publicación de Instagram (ej:
+                <span className="text-gray-400"> https://www.instagram.com/p/XXXX/</span>). Aparecerá arriba en la página de Comunidad.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <input
+                  type="text"
+                  value={igUrlInput}
+                  onChange={(e) => setIgUrlInput(e.target.value)}
+                  placeholder="https://www.instagram.com/p/XXXX/"
+                  className="flex-1 bg-brand-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm text-white focus:ring-2 focus:ring-brand-primary transition-all outline-none placeholder:text-gray-600"
+                />
+                <Button
+                  type="submit"
+                  disabled={igSaving || !igUrlInput.trim()}
+                  className="h-14 px-8 rounded-2xl bg-brand-primary text-brand-black hover:bg-white transition-all text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {igSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Agregar
+                </Button>
+              </div>
+            </form>
+
+            {/* Lista de publicaciones agregadas */}
+            {loadingIg ? (
+              <div className="text-center py-20 animate-pulse text-brand-primary font-black uppercase tracking-widest">
+                Sincronizando publicaciones...
+              </div>
+            ) : igPosts.length > 0 ? (
+              <div className="space-y-4">
+                {igPosts.map((p) => (
+                  <div key={p.id} className="bg-white/5 border border-white/10 rounded-3xl p-6 flex items-center gap-5 hover:border-brand-primary/30 transition-all">
+                    <div className="w-12 h-12 rounded-2xl bg-brand-primary/10 flex items-center justify-center text-brand-primary shrink-0">
+                      <Instagram className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-white font-bold hover:text-brand-primary transition-colors break-all underline-offset-2 hover:underline">
+                        {p.url}
+                      </a>
+                      <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">
+                        {p.createdAt?.toDate ? p.createdAt.toDate().toLocaleString() : "Reciente"}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteIgPost(p.id)}
+                      className="text-gray-500 hover:text-brand-secondary transition-colors p-2 shrink-0"
+                      aria-label="Quitar publicación"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white/5 rounded-[3rem] border border-dashed border-white/10">
+                <Instagram className="w-12 h-12 text-gray-600 mx-auto mb-4 opacity-20" />
+                <p className="text-gray-500 uppercase tracking-widest text-sm font-bold">Aún no hay publicaciones agregadas</p>
+              </div>
+            )}
+          </div>
         ) : (
           loadingLeads ? (
             <div className="text-center py-20 animate-pulse text-brand-primary font-black uppercase tracking-widest">

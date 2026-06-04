@@ -167,62 +167,6 @@ function makeTransporter() {
   });
 }
 
-// ===============================================================
-// Instagram (Graph API) — feed de @flyand_chill para la página de
-// Comunidad. Gratuito: usa la API oficial de Meta para leer el feed
-// propio. Se cachea en memoria para no exceder límites y responder
-// rápido. El token (long-lived, 60 días) se auto-renueva al usarse.
-// ===============================================================
-const IG_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN || "";
-const IG_CACHE_TTL_MS = 30 * 60 * 1000; // 30 min
-let igCache: { at: number; data: any[] } = { at: 0, data: [] };
-let igTokenRefreshedAt = 0;
-
-// Renueva el token long-lived si lleva > 24h sin renovarse (Meta permite
-// refrescar tokens de más de 24h de antigüedad; extiende otros 60 días).
-async function maybeRefreshInstagramToken() {
-  if (!IG_TOKEN) return;
-  const DAY = 24 * 60 * 60 * 1000;
-  if (Date.now() - igTokenRefreshedAt < DAY) return;
-  try {
-    const url = `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(IG_TOKEN)}`;
-    const r = await fetch(url);
-    if (r.ok) {
-      igTokenRefreshedAt = Date.now();
-      console.log("Instagram: token long-lived renovado.");
-    }
-  } catch (e) {
-    console.error("Instagram: no se pudo renovar el token:", e);
-  }
-}
-
-async function fetchInstagramFeed(): Promise<any[]> {
-  if (!IG_TOKEN) return [];
-  // Servir caché si está fresca.
-  if (igCache.data.length && Date.now() - igCache.at < IG_CACHE_TTL_MS) {
-    return igCache.data;
-  }
-  maybeRefreshInstagramToken().catch(() => {});
-  const fields = "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp";
-  const url = `https://graph.instagram.com/me/media?fields=${fields}&limit=12&access_token=${encodeURIComponent(IG_TOKEN)}`;
-  const r = await fetch(url);
-  if (!r.ok) {
-    throw new Error(`Instagram API ${r.status}`);
-  }
-  const json: any = await r.json();
-  const items = Array.isArray(json.data) ? json.data : [];
-  // Normalizar: para videos usamos el thumbnail como imagen.
-  const normalized = items.map((m: any) => ({
-    id: m.id,
-    caption: m.caption || "",
-    permalink: m.permalink,
-    image: m.media_type === "VIDEO" ? (m.thumbnail_url || m.media_url) : m.media_url,
-    isVideo: m.media_type === "VIDEO",
-    timestamp: m.timestamp,
-  }));
-  igCache = { at: Date.now(), data: normalized };
-  return normalized;
-}
 
 const WHATSAPP_PHONE = "573019202618";
 
@@ -435,28 +379,6 @@ async function startServer() {
   // Expose the public (non-secret) Wompi config to the frontend
   app.get("/api/wompi/config", (req, res) => {
     res.json({ publicKey: WOMPI_PUBLIC_KEY, currency: CURRENCY, env: WOMPI_ENV });
-  });
-
-  // Feed de Instagram (@flyand_chill) para la página de Comunidad.
-  // Si no hay token configurado o falla, responde { configured:false, posts:[] }
-  // para que el frontend muestre un fallback elegante (nunca rompe la web).
-  app.get("/api/instagram/feed", async (req, res) => {
-    if (!IG_TOKEN) {
-      return res.json({ configured: false, posts: [] });
-    }
-    try {
-      const posts = await fetchInstagramFeed();
-      // Cache HTTP corta: el navegador/CDN puede reutilizar 5 min.
-      res.setHeader("Cache-Control", "public, max-age=300");
-      res.json({ configured: true, posts });
-    } catch (error: any) {
-      console.error("Instagram feed error:", error?.message || error);
-      // Si hay caché previa, la devolvemos aunque la llamada falle.
-      if (igCache.data.length) {
-        return res.json({ configured: true, posts: igCache.data, stale: true });
-      }
-      res.json({ configured: false, posts: [], error: "No se pudo cargar el feed" });
-    }
   });
 
   // Newsletter Signup API

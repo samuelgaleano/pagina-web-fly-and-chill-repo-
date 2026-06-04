@@ -2,16 +2,14 @@ import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { Music, Instagram, Twitter, Send, ArrowRight, Play, Loader2, ExternalLink } from "lucide-react";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const INSTAGRAM_URL = "https://www.instagram.com/flyand_chill/";
 
 interface IgPost {
   id: string;
-  caption: string;
-  permalink: string;
-  image: string;
-  isVideo: boolean;
-  timestamp?: string;
+  url: string;
 }
 
 export function Community() {
@@ -21,26 +19,38 @@ export function Community() {
   const [isSendingSong, setIsSendingSong] = useState(false);
   const [igPosts, setIgPosts] = useState<IgPost[]>([]);
   const [igLoading, setIgLoading] = useState(true);
-  const [igConfigured, setIgConfigured] = useState(true);
 
-  // Feed de Instagram (se actualiza solo: cada post nuevo aparece arriba).
+  // Publicaciones de Instagram gestionadas desde el panel de Admin.
+  // Cada post nuevo aparece arriba (orden por fecha de creación desc).
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/instagram/feed");
-        const data = await res.json();
-        if (cancelled) return;
-        setIgConfigured(!!data.configured);
-        setIgPosts(Array.isArray(data.posts) ? data.posts : []);
-      } catch {
-        if (!cancelled) setIgConfigured(false);
-      } finally {
-        if (!cancelled) setIgLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
+    const q = query(collection(db, "instagramPosts"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      setIgPosts(snap.docs.map(d => ({ id: d.id, url: (d.data() as any).url })));
+      setIgLoading(false);
+    }, () => setIgLoading(false));
+    return () => unsub();
   }, []);
+
+  // Carga el script oficial de Instagram y procesa los embeds cada vez que
+  // cambian las publicaciones.
+  useEffect(() => {
+    if (igPosts.length === 0) return;
+    const process = () => (window as any).instgrm?.Embeds?.process();
+    const existing = document.getElementById("ig-embed-script") as HTMLScriptElement | null;
+    if (existing) {
+      process();
+    } else {
+      const s = document.createElement("script");
+      s.id = "ig-embed-script";
+      s.src = "https://www.instagram.com/embed.js";
+      s.async = true;
+      s.onload = process;
+      document.body.appendChild(s);
+    }
+    // Reprocesar tras un pequeño delay por si el script ya estaba cargado.
+    const t = setTimeout(process, 300);
+    return () => clearTimeout(t);
+  }, [igPosts]);
   const [songSent, setSongSent] = useState(false);
 
   const handleSubscribe = (e: React.FormEvent) => {
@@ -156,51 +166,36 @@ export function Community() {
 
           {/* Skeleton de carga */}
           {igLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="aspect-square rounded-3xl bg-white/5 border border-white/10 animate-pulse" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-[500px] rounded-3xl bg-white/5 border border-white/10 animate-pulse" />
               ))}
             </div>
-          ) : igConfigured && igPosts.length > 0 ? (
+          ) : igPosts.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
                 {igPosts.map((post, i) => (
-                  <motion.a
+                  <motion.div
                     key={post.id}
-                    href={post.permalink}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-60px" }}
                     transition={{ delay: Math.min(i * 0.05, 0.3), duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
-                    className="group relative block aspect-square rounded-3xl overflow-hidden border border-white/10 bg-white/5 shadow-lg hover:border-brand-primary/40 transition-colors duration-300"
+                    className="rounded-3xl overflow-hidden border border-white/10 bg-white shadow-lg"
                   >
-                    <img
-                      src={post.image}
-                      alt={post.caption ? post.caption.slice(0, 80) : "Publicación de Instagram"}
-                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 will-change-transform"
-                      referrerPolicy="no-referrer"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    {/* Overlay con caption + icono al pasar el mouse */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-brand-black/90 via-brand-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
-                      {post.caption && (
-                        <p className="serif text-sm text-white/90 italic leading-snug line-clamp-3 mb-3">
-                          {post.caption}
-                        </p>
-                      )}
-                      <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-primary">
-                        <Instagram className="w-3.5 h-3.5" /> Ver en Instagram
-                      </span>
-                    </div>
-                    {post.isVideo && (
-                      <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-brand-black/60 backdrop-blur-md flex items-center justify-center">
-                        <Play className="w-3.5 h-3.5 text-white fill-white" />
-                      </div>
-                    )}
-                  </motion.a>
+                    {/* Embed oficial de Instagram. instgrm.Embeds.process() lo
+                        convierte en la tarjeta de la publicación. */}
+                    <blockquote
+                      className="instagram-media"
+                      data-instgrm-permalink={post.url}
+                      data-instgrm-version="14"
+                      style={{ margin: 0, width: "100%", minWidth: 0, border: 0 }}
+                    >
+                      <a href={post.url} target="_blank" rel="noopener noreferrer" className="block p-6 text-center text-gray-500 text-sm">
+                        Ver publicación en Instagram
+                      </a>
+                    </blockquote>
+                  </motion.div>
                 ))}
               </div>
               <div className="flex justify-center mt-16">
@@ -212,7 +207,7 @@ export function Community() {
               </div>
             </>
           ) : (
-            /* Fallback elegante si el feed aún no está conectado o falla */
+            /* Fallback elegante si aún no se han agregado publicaciones */
             <div className="max-w-xl mx-auto text-center bg-white/5 border border-white/10 rounded-[2.5rem] p-12 md:p-16 shadow-2xl">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand-primary/30 to-brand-secondary/30 flex items-center justify-center mx-auto mb-8 border border-white/10">
                 <Instagram className="w-9 h-9 text-white" />
