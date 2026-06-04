@@ -60,6 +60,16 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
 
   // Auth Listener
   useEffect(() => {
+    // BYPASS SOLO EN DESARROLLO: con `npm run dev` (import.meta.env.DEV === true)
+    // se concede acceso de admin para poder revisar /admin en localhost sin
+    // iniciar sesión. En el build de producción import.meta.env.DEV es false,
+    // así que este bloque NUNCA se activa en producción.
+    if (import.meta.env.DEV) {
+      setIsAuthReady(true);
+      setIsAdmin(true);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setIsAuthReady(true);
